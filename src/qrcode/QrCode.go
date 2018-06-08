@@ -28,8 +28,8 @@ func NewQrCode(ver int, ecl utils.Ecc, dataCodewords []uint8, mask int) QrCode {
 	newQrCode.Modules = make([][]bool, newQrCode.Size)
 	newQrCode.IsFunction = make([][]bool, newQrCode.Size)
 	newQrCode.DrawFunctionPatterns()
-	allCodewords := newQrCode.AppendErrorCorrection(dataCodewords)
-	newQrCode.DrawCodewords(allCodewords)
+	allCodewords := newQrCode.AppendErrorCorrection(&dataCodewords)
+	newQrCode.DrawCodewords(&allCodewords)
 	newQrCode.Mask = newQrCode.HandleConstructorMasking(mask)
 	return newQrCode
 }
@@ -50,13 +50,13 @@ func (qrc *QrCode) GetFormatBits(ecl utils.Ecc) int {
 }
 
 func (qrc *QrCode) EncodeText(text string, ecl utils.Ecc) QrCode {
-	segs := QrSegment{}.MakeSegments(text)
+	segs := MakeSegments(text)
 	return qrc.EncodeSegments(&segs, ecl, 1, 40, -1, true)
 }
 
 func (qrc *QrCode) EncodeBinary(data *[]uint8, ecl utils.Ecc) QrCode {
-	segs := []QrSegment{QrSegment{}.MakeBytes(data)}
-	return qrc.EncodeSegments(segs, ecl, 1, 40, -1, true)
+	segs := []QrSegment{MakeBytes(data)}
+	return qrc.EncodeSegments(&segs, ecl, 1, 40, -1, true)
 }
 
 func (qrc *QrCode) EncodeSegments(segs *[]QrSegment, ecl utils.Ecc, minVersion, maxVersion, mask int, boostEcl bool) QrCode {
@@ -66,7 +66,7 @@ func (qrc *QrCode) EncodeSegments(segs *[]QrSegment, ecl utils.Ecc, minVersion, 
 	var version, dataUsedBits int
 	for version = minVersion; ; version++ {
 		dataCapacityBits := qrc.GetNumDataCodewords(version, ecl) * 8
-		dataUsedBits = QrSegment{}.GetTotalBits(segs, version)
+		dataUsedBits = GetTotalBits(segs, version)
 		if dataUsedBits != -1 && dataUsedBits <= dataCapacityBits {
 			break
 		}
@@ -260,4 +260,62 @@ func (qrc *QrCode) AppendErrorCorrection(data *[]uint8) []uint8 {
 	return result
 }
 
+func (qrc *QrCode) DrawCodewords(data *[]uint8) {
+	if len(*data) != qrc.GetNumRawDataModules(qrc.Version) / 8 {
+		panic("invalid argument")
+	}
+	i := 0
+	for right := qrc.Size - 1; right >= 1; right -= 2 {
+		if right == 6 {
+			right = 5
+		}
+		for vert := 0; vert < qrc.Size; vert++ {
+			for j := 0; j < 2; j++ {
+				x := right - j
+				y := vert
+				if ((right + 1) & 2) == 0 {
+					y = qrc.Size - 1 - vert
+				}
+				if qrc.IsFunction[y][x] && i < len(*data) * 8 {
+					qrc.Modules[y][x] = qrc.GetBit(int64((*data)[i >> 3]), 7 - (i & 7))
+					i++
+				}
+			}
+		}
+	}
+	if i != len(*data) * 8 {
+		panic("assertion error")
+	}
+}
 
+func (qrc *QrCode) ApplyMask(mask int) {
+	if mask < 0 || mask > 7 {
+		panic("mask value out of range")
+	}
+	for y := 0; y < qrc.Size; y++ {
+		for x := 0; x < qrc.Size; x++ {
+			var invert bool
+			switch mask {
+			case 0:
+				invert = (x + y) % 2 == 0
+			case 1:
+				invert = y % 2 == 0
+			case 2:
+				invert = x % 3 == 0
+			case 3:
+				invert = (x + y) % 3 == 0
+			case 4:
+				invert = (x / 3 + y / 2) % 2 == 0
+			case 5:
+				invert = x * y % 2 + x * y % 3 == 0
+			case 6:
+				invert = (x * y % 2 + x * y % 3) % 2 == 0
+			case 7:
+				invert = ((x + y) % 2 + x * y % 3) % 2 == 0
+			default:
+				panic("assertion error")
+			}
+			qrc.Modules[y][x] = qrc.Modules[y][x] != (invert && !qrc.IsFunction[y][x])
+		}
+	}
+}

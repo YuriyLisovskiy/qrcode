@@ -38,13 +38,13 @@ func (rsg ReedSolomonGenerator) GetRemainder(data *[]uint8) []uint8 {
 }
 
 func (rsg ReedSolomonGenerator) Multiply(x, y uint8) uint8 {
-	z := uint8(0)
+	z := 0
 	for i := 7; i >= 0; i-- {
 		z = (z << 1) ^ ((z >> 7) * 0x11D)
-		z ^= ((y >> uint8(i)) & 1) * x
+		z = int(uint8(z) ^ ((y >> uint8(i)) & 1) * x)
 	}
 	if z>>8 != 0 {
 		panic("assertion error")
 	}
-	return z
+	return uint8(z)
 }
