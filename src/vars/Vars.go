@@ -9,3 +9,7 @@ var (
 	KANJI        = utils.NewMode(0x8, 8, 10, 12)
 	ECI          = utils.NewMode(0x7, 0, 0, 0)
 )
+
+const AlphanumericCharset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
+
+const MaxInt = int(^uint(0) >> 1)
