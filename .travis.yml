@@ -1,0 +1,9 @@
+language: go
+go:
+  - 1.x
+notifications:
+  email: false
+before_script:
+  - go get ./...
+script:
+  - make test
