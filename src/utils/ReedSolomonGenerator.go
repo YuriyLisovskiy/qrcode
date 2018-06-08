@@ -24,7 +24,7 @@ func NewReedSolomonGenerator(degree int) ReedSolomonGenerator {
 	return newRSG
 }
 
-func (rsg ReedSolomonGenerator) GetReminder(data *[]uint8) []uint8 {
+func (rsg ReedSolomonGenerator) GetRemainder(data *[]uint8) []uint8 {
 	result := make([]uint8, len(rsg.Coefficients))
 	for _, b := range *data {
 		factor := b ^ result[0]
