@@ -1,7 +1,7 @@
 package utils
 
 type Mode struct {
-	ModeBits int
+	ModeBits         int
 	NumBitsCharCount [3]int
 }
 

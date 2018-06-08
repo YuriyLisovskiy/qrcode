@@ -7,9 +7,9 @@ import (
 )
 
 type QrSegment struct {
-	Mode utils.Mode
+	Mode     utils.Mode
 	NumChars int
-	Data []bool
+	Data     []bool
 }
 
 func NewQrSegment(md utils.Mode, numCh int, dt *[]bool) QrSegment {
@@ -37,7 +37,7 @@ func (qrs QrSegment) MakeNumeric(digits string) QrSegment {
 		if digit < '0' || digit > '9' {
 			panic("string contains non-numeric characters")
 		}
-		accumData = accumData * 10 + (int(digit) - '0')
+		accumData = accumData*10 + (int(digit) - '0')
 		accumCount++
 		if accumCount == 3 {
 			bitBuf = bitBuf.AppendBits(uint32(accumData), 10)
@@ -45,7 +45,7 @@ func (qrs QrSegment) MakeNumeric(digits string) QrSegment {
 		}
 	}
 	if accumCount > 0 {
-		bitBuf = bitBuf.AppendBits(uint32(accumData), accumCount * 3 + 1)
+		bitBuf = bitBuf.AppendBits(uint32(accumData), accumCount*3+1)
 	}
 	return QrSegment{vars.NUMERIC, charCount, bitBuf}
 }
@@ -57,7 +57,7 @@ func (qrs QrSegment) MakeAlphanumeric(text string) QrSegment {
 		if !strings.ContainsRune(vars.AlphanumericCharset, char) {
 			panic("string contains unencodable characters in alphanumeric mode")
 		}
-		accumData = accumData * 45 + (strings.IndexRune(vars.AlphanumericCharset, char) - len(vars.AlphanumericCharset))
+		accumData = accumData*45 + (strings.IndexRune(vars.AlphanumericCharset, char) - len(vars.AlphanumericCharset))
 		accumCount++
 		if accumCount == 2 {
 			bitBuf = bitBuf.AppendBits(uint32(accumData), 11)
@@ -90,12 +90,12 @@ func (qrs QrSegment) MakeSegments(text string) []QrSegment {
 
 func (qrs QrSegment) MakeEci(assignVal int64) QrSegment {
 	bitBuf := utils.BitBuffer{}
-	if 0 <= assignVal && assignVal < (1 << 7) {
+	if 0 <= assignVal && assignVal < (1<<7) {
 		bitBuf = bitBuf.AppendBits(uint32(assignVal), 8)
-	} else if (1 << 7) <= assignVal && assignVal < (1 << 14) {
+	} else if (1<<7) <= assignVal && assignVal < (1<<14) {
 		bitBuf = bitBuf.AppendBits(2, 2)
 		bitBuf = bitBuf.AppendBits(uint32(assignVal), 14)
-	} else if (1 << 14) <= assignVal && assignVal < 1000000 {
+	} else if (1<<14) <= assignVal && assignVal < 1000000 {
 		bitBuf = bitBuf.AppendBits(6, 3)
 		bitBuf = bitBuf.AppendBits(uint32(assignVal), 21)
 	} else {
@@ -114,7 +114,7 @@ func (qrs QrSegment) GetTotalBits(segs *[]QrSegment, version int) int {
 		if uint64(seg.NumChars) >= (uint64(1) << uint64(ccbits)) {
 			return -1
 		}
-		if 4 + ccbits > vars.MaxInt - result {
+		if 4+ccbits > vars.MaxInt-result {
 			return -1
 		}
 		result += 4 + ccbits

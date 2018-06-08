@@ -10,13 +10,13 @@ func NewReedSolomonGenerator(degree int) ReedSolomonGenerator {
 		panic("degree out of range")
 	}
 	newRSG.Coefficients = make([]uint8, degree)
-	newRSG.Coefficients[degree - 1] = 1
+	newRSG.Coefficients[degree-1] = 1
 	root := uint8(1)
 	for i := 0; i < degree; i++ {
 		for j := 0; j < len(newRSG.Coefficients); j++ {
 			newRSG.Coefficients[j] = newRSG.Multiply(newRSG.Coefficients[j], root)
-			if j + 1 < len(newRSG.Coefficients) {
-				newRSG.Coefficients[j] ^= newRSG.Coefficients[j + 1]
+			if j+1 < len(newRSG.Coefficients) {
+				newRSG.Coefficients[j] ^= newRSG.Coefficients[j+1]
 			}
 		}
 		root = newRSG.Multiply(root, 0x02)
@@ -43,7 +43,7 @@ func (rsg ReedSolomonGenerator) Multiply(x, y uint8) uint8 {
 		z = (z << 1) ^ ((z >> 7) * 0x11D)
 		z ^= ((y >> uint8(i)) & 1) * x
 	}
-	if z >> 8 != 0 {
+	if z>>8 != 0 {
 		panic("assertion error")
 	}
 	return z
