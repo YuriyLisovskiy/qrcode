@@ -1,4 +1,4 @@
-package test_data
+package utils
 
 var (
 	XORTestData = []struct{
