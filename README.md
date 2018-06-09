@@ -1,12 +1,12 @@
-## QR Code Generator
+# QR Code Generator
 [![License](https://img.shields.io/badge/BSD-3--Clause-orange.svg)](LICENSE)
 [![Language](https://img.shields.io/badge/Go-1.10-blue.svg)](https://golang.org/)
 [![Build Status](https://travis-ci.org/YuriyLisovskiy/qrcode.svg?branch=master)](https://travis-ci.org/YuriyLisovskiy/qrcode)
-## Download
+### Download
  ```
  $ git clone https://github.com/YuriyLisovskiy/qrcode.git
  ```
- ## Build
+ ### Build
  > Minimum version of Go language required: `go1.10`, see [golang installation](https://golang.org/doc/install)
  
  To build for all supported operating systems:
@@ -35,12 +35,12 @@
  	* `$ make freebsd-arm`
  * **Solaris**(only amd64):
  	* `$ make solaris`
- ## Testing
+ ### Testing
  To run tests:
  ```
  $ make test
  ```
-## Author
+### Author
  * [Yuriy Lisovskiy](https://github.com/YuriyLisovskiy)
- ## License
-  This project is licensed under BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
+### License
+This project is licensed under BSD 3-Clause License - see the [LICENSE](LICENSE) file for details.
