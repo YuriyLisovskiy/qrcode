@@ -37,18 +37,6 @@ func NewQrCode(ver int, ecl utils.Ecc, dataCodewords []uint8, mask int) QrCode {
 	allCodewords := newQrCode.AppendErrorCorrection(&dataCodewords)
 	newQrCode.DrawCodewords(&allCodewords)
 	newQrCode.Mask = newQrCode.HandleConstructorMasking(mask)
-
-	for _, i := range newQrCode.Modules {
-		for _, j := range i {
-			if j {
-				print(1)
-			} else {
-				print(0)
-			}
-		}
-		println()
-	}
-
 	return newQrCode
 }
 
@@ -261,7 +249,7 @@ func (qrc *QrCode) AppendErrorCorrection(data *[]uint8) []uint8 {
 		if i < numShortBlocks {
 			c = 0
 		}
-		dat := []uint8((*data)[k:(k + shortBlockLen - blockEccLen + c)]) // TODO: print dat
+		dat := []uint8((*data)[k:(k + shortBlockLen - blockEccLen + c)])
 		k += len(dat)
 		ecc := []uint8(rs.GetRemainder(&dat))
 		if i < numShortBlocks {
@@ -339,8 +327,7 @@ func (qrc *QrCode) ApplyMask(mask int) {
 			default:
 				panic("assertion error")
 			}
-		//	println(qrc.Modules[y][x])
-			qrc.Modules[y][x] = utils.XOR(qrc.Modules[y][x], invert && !qrc.IsFunction[y][x]) // TODO: check &
+			qrc.Modules[y][x] = utils.XOR(qrc.Modules[y][x], invert && !qrc.IsFunction[y][x])
 		}
 	}
 }
