@@ -300,7 +300,7 @@ func (qrc *QrCode) DrawCodewords(data *[]uint8) {
 				if ((right + 1) & 2) == 0 {
 					y = qrc.Size - 1 - vert
 				}
-				if qrc.IsFunction[y][x] && i < uint(len(*data)*8) {
+				if !qrc.IsFunction[y][x] && i < uint(len(*data)*8) {
 					qrc.Modules[y][x] = qrc.GetBit(int((*data)[i>>3]), uint(7-(int(i&7))))
 					i++
 				}
@@ -339,7 +339,7 @@ func (qrc *QrCode) ApplyMask(mask int) {
 			default:
 				panic("assertion error")
 			}
-			println(qrc.Modules[y][x])
+		//	println(qrc.Modules[y][x])
 			qrc.Modules[y][x] = utils.XOR(qrc.Modules[y][x], invert && !qrc.IsFunction[y][x]) // TODO: check &
 		}
 	}
