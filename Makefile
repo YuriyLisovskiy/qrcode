@@ -9,7 +9,7 @@ FLAGS = main.go
 
 all: clean test linux windows darwin freebsd solaris
 
-all-os: clean linux windows darwin freebsd solaris
+build: clean linux windows darwin freebsd solaris
 
 linux: linux-386 linux-arm linux-amd64 linux-arm64
 
