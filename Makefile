@@ -5,7 +5,7 @@ ARCH32_arm = arm
 ARCH64_amd64 = amd64
 ARCH64_arm64 = arm64
 
-FLAGS = main.go
+FLAGS = demo.go
 
 all: clean test linux windows darwin freebsd solaris
 
@@ -61,9 +61,10 @@ solaris:
 	GOOS=solaris GOARCH=${ARCH64_amd64} go build -o bin/solaris/${ARCH64_amd64}/${BINARY}.bin ${FLAGS}
 
 test:
-	go test ./test/...
+	go test ./src/...
+
+run:
+	go run demo.go
 
 clean:
 	-rm -rf bin/
-
-.PHONY: linux-386 linux-arm linux-amd64 linux-arm64 darwin-386 darwin-amd64 windows-386 windows-amd64 freebsd-386 freebsd-arm freebsd-amd64 solaris-amd64 test clean
