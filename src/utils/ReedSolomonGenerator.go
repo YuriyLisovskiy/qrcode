@@ -14,12 +14,12 @@ func NewReedSolomonGenerator(degree int) ReedSolomonGenerator {
 	root := uint8(1)
 	for i := 0; i < degree; i++ {
 		for j := 0; j < len(newRSG.Coefficients); j++ {
-			newRSG.Coefficients[j] = newRSG.Multiply(newRSG.Coefficients[j], root)
+			newRSG.Coefficients[j] = newRSG.multiply(newRSG.Coefficients[j], root)
 			if j+1 < len(newRSG.Coefficients) {
 				newRSG.Coefficients[j] ^= newRSG.Coefficients[j+1]
 			}
 		}
-		root = newRSG.Multiply(root, 0x02)
+		root = newRSG.multiply(root, 0x02)
 	}
 	return newRSG
 }
@@ -31,13 +31,13 @@ func (rsg ReedSolomonGenerator) GetRemainder(data *[]uint8) []uint8 {
 		result = result[1:]
 		result = append(result, 0)
 		for j := 0; j < len(result); j++ {
-			result[j] ^= rsg.Multiply(rsg.Coefficients[j], factor)
+			result[j] ^= rsg.multiply(rsg.Coefficients[j], factor)
 		}
 	}
 	return result
 }
 
-func (rsg ReedSolomonGenerator) Multiply(x, y uint8) uint8 {
+func (rsg ReedSolomonGenerator) multiply(x, y uint8) uint8 {
 	z := 0
 	for i := 7; i >= 0; i-- {
 		z = (z << 1) ^ ((z >> 7) * 0x11D)

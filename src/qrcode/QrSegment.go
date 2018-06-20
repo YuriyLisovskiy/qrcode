@@ -12,14 +12,7 @@ type QrSegment struct {
 	Data     []bool
 }
 
-func NewQrSegment(md utils.Mode, numCh int, dt *[]bool) QrSegment {
-	if numCh < 0 {
-		panic("invalid value")
-	}
-	return QrSegment{md, numCh, *dt}
-}
-
-func MakeBytes(data *[]uint8) QrSegment {
+func makeBytes(data *[]uint8) QrSegment {
 	if len(*data) > vars.MaxInt {
 		panic("data too long")
 	}
@@ -30,7 +23,7 @@ func MakeBytes(data *[]uint8) QrSegment {
 	return QrSegment{vars.BYTE, len(*data), bitBuf}
 }
 
-func MakeNumeric(digits string) QrSegment {
+func makeNumeric(digits string) QrSegment {
 	bitBuf := utils.BitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
 	for _, digit := range digits {
@@ -50,7 +43,7 @@ func MakeNumeric(digits string) QrSegment {
 	return QrSegment{vars.NUMERIC, charCount, bitBuf}
 }
 
-func MakeAlphanumeric(text string) QrSegment {
+func makeAlphanumeric(text string) QrSegment {
 	bitBuf := utils.BitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
 	for _, char := range text {
@@ -70,25 +63,25 @@ func MakeAlphanumeric(text string) QrSegment {
 	return QrSegment{vars.ALPHANUMERIC, charCount, bitBuf}
 }
 
-func MakeSegments(text string) []QrSegment {
+func makeSegments(text string) []QrSegment {
 	var result []QrSegment
 	if text == "" {
 
-	} else if IsNumeric(text) {
-		result = append(result, MakeNumeric(text))
-	} else if IsAlphanumeric(text) {
-		result = append(result, MakeAlphanumeric(text))
+	} else if isNumeric(text) {
+		result = append(result, makeNumeric(text))
+	} else if isAlphanumeric(text) {
+		result = append(result, makeAlphanumeric(text))
 	} else {
 		var bytes []uint8
 		for _, char := range text {
 			bytes = append(bytes, uint8(char))
 		}
-		result = append(result, MakeBytes(&bytes))
+		result = append(result, makeBytes(&bytes))
 	}
 	return result
 }
 
-func (qrs QrSegment) MakeEci(assignVal int64) QrSegment {
+func (qrs QrSegment) makeEci(assignVal int64) QrSegment {
 	bitBuf := utils.BitBuffer{}
 	if 0 <= assignVal && assignVal < (1<<7) {
 		bitBuf = bitBuf.AppendBits(uint32(assignVal), 8)
@@ -104,7 +97,7 @@ func (qrs QrSegment) MakeEci(assignVal int64) QrSegment {
 	return QrSegment{vars.ECI, 0, bitBuf}
 }
 
-func GetTotalBits(segs *[]QrSegment, version int) int {
+func getTotalBits(segs *[]QrSegment, version int) int {
 	if version < 1 || version > 40 {
 		panic("version number out of range")
 	}
@@ -126,7 +119,7 @@ func GetTotalBits(segs *[]QrSegment, version int) int {
 	return result
 }
 
-func IsAlphanumeric(text string) bool {
+func isAlphanumeric(text string) bool {
 	for _, char := range text {
 		if !strings.ContainsRune(vars.AlphanumericCharset, char) {
 			return false
@@ -135,7 +128,7 @@ func IsAlphanumeric(text string) bool {
 	return true
 }
 
-func IsNumeric(text string) bool {
+func isNumeric(text string) bool {
 	for _, char := range text {
 		if char < '0' || char > '9' {
 			return false
@@ -144,14 +137,14 @@ func IsNumeric(text string) bool {
 	return true
 }
 
-func (qrs QrSegment) GetMode() utils.Mode {
+func (qrs QrSegment) getMode() utils.Mode {
 	return qrs.Mode
 }
 
-func (qrs QrSegment) GetNumChars() int {
+func (qrs QrSegment) getNumChars() int {
 	return qrs.NumChars
 }
 
-func (qrs QrSegment) GetData() *[]bool {
+func (qrs QrSegment) getData() *[]bool {
 	return &qrs.Data
 }
