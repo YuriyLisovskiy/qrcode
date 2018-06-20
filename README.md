@@ -17,6 +17,10 @@
  ```
  $ make
  ```
+ To run demo:
+ ```
+ $ make run
+ ```
  Available operating systems build:
  * **Linux**: `$ make linux` - to build all supported linux architectures, other:
  	* `$ make linux-386`
