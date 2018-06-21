@@ -45,7 +45,7 @@ func makeNumeric(digits string) QrSegment {
 	return QrSegment{vars.NUMERIC, charCount, bitBuf}
 }
 
-func makeAlphanumeric(text string) QrSegment {
+func makeAlphanumeric(text string) QrSegment {	// TODO: fix: accumData is incorrect, line 56
 	bitBuf := utils.BitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
 	println("Text:", text)
@@ -76,7 +76,6 @@ func makeSegments(text string) []QrSegment {
 		result = []QrSegment{makeNumeric(text)}
 	} else if isAlphanumeric(text) {
 		result = []QrSegment{makeAlphanumeric(text)}
-		println("isAlphaNumeric")
 	} else {
 		bytes := []uint8(text)
 		result = []QrSegment{makeBytes(&bytes)}

@@ -481,13 +481,5 @@ func (qrc *QrCode) getNumDataCodewords(ver int, ecl utils.Ecc) int {
 	if ver < vars.MinVersion || ver > vars.MaxVersion {
 		panic("version number out of range")
 	}
-
-//	println("Ver:", ver)
-//	println("Ecc:", ecl)
-//	println(qrc.getNumRawDataModules(ver))
-//	println(vars.EccCodewordsPerBlock[int(ecl)][ver])
-//	println(vars.NumErrorCorrectionBlocks[int(ecl)][ver])
-//	println()
-
 	return qrc.getNumRawDataModules(ver) / 8 - vars.EccCodewordsPerBlock[int(ecl)][ver] * vars.NumErrorCorrectionBlocks[int(ecl)][ver]
 }
