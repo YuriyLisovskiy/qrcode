@@ -56,13 +56,12 @@ func (qrc *QrCode) getFormatBits(ecl utils.Ecc) int {
 }
 
 func (qrc *QrCode) EncodeText(text string, ecl utils.Ecc) QrCode {
-	segs := makeSegments(text)
-	return qrc.encodeSegments(&segs, ecl, 1, 40, -1, true)
+	segments := makeSegments(text)
+	return qrc.encodeSegments(&segments, ecl, 1, 40, -1, true)
 }
 
 func (qrc *QrCode) EncodeBinary(data *[]uint8, ecl utils.Ecc) QrCode {
-	segs := []QrSegment{makeBytes(data)}
-	return qrc.encodeSegments(&segs, ecl, 1, 40, -1, true)
+	return qrc.encodeSegments(&[]QrSegment{makeBytes(data)}, ecl, 1, 40, -1, true)
 }
 
 func (qrc *QrCode) encodeSegments(segs *[]QrSegment, ecl utils.Ecc, minVersion, maxVersion, mask int, boostEcl bool) QrCode {
@@ -71,7 +70,7 @@ func (qrc *QrCode) encodeSegments(segs *[]QrSegment, ecl utils.Ecc, minVersion, 
 	}
 	var version, dataUsedBits int
 	for version = minVersion; ; version++ {
-		dataCapacityBits := int(qrc.getNumDataCodewords(version, ecl) * 8)
+		dataCapacityBits := qrc.getNumDataCodewords(version, ecl) * 8
 		dataUsedBits = getTotalBits(segs, version)
 		if dataUsedBits != -1 && dataUsedBits <= dataCapacityBits {
 			break
@@ -482,5 +481,13 @@ func (qrc *QrCode) getNumDataCodewords(ver int, ecl utils.Ecc) int {
 	if ver < vars.MinVersion || ver > vars.MaxVersion {
 		panic("version number out of range")
 	}
+
+//	println("Ver:", ver)
+//	println("Ecc:", ecl)
+//	println(qrc.getNumRawDataModules(ver))
+//	println(vars.EccCodewordsPerBlock[int(ecl)][ver])
+//	println(vars.NumErrorCorrectionBlocks[int(ecl)][ver])
+//	println()
+
 	return qrc.getNumRawDataModules(ver) / 8 - vars.EccCodewordsPerBlock[int(ecl)][ver] * vars.NumErrorCorrectionBlocks[int(ecl)][ver]
 }

@@ -4,6 +4,7 @@ import (
 	"strings"
 	"github.com/YuriyLisovskiy/qrcode/src/vars"
 	"github.com/YuriyLisovskiy/qrcode/src/utils"
+	"math"
 )
 
 type QrSegment struct {
@@ -13,7 +14,7 @@ type QrSegment struct {
 }
 
 func makeBytes(data *[]uint8) QrSegment {
-	if len(*data) > vars.MaxInt {
+	if len(*data) > math.MaxInt32 {
 		panic("data too long")
 	}
 	bitBuf := utils.BitBuffer{}
@@ -36,6 +37,7 @@ func makeNumeric(digits string) QrSegment {
 			bitBuf = bitBuf.AppendBits(uint32(accumData), 10)
 			accumData, accumCount = 0, 0
 		}
+		charCount++
 	}
 	if accumCount > 0 {
 		bitBuf = bitBuf.AppendBits(uint32(accumData), accumCount*3+1)
@@ -46,16 +48,19 @@ func makeNumeric(digits string) QrSegment {
 func makeAlphanumeric(text string) QrSegment {
 	bitBuf := utils.BitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
+	println("Text:", text)
 	for _, char := range text {
 		if !strings.ContainsRune(vars.AlphanumericCharset, char) {
 			panic("string contains unencodable characters in alphanumeric mode")
 		}
-		accumData = accumData*45 + (strings.IndexRune(vars.AlphanumericCharset, char) - len(vars.AlphanumericCharset))
+		accumData = accumData*45 + (int(char) - len(vars.AlphanumericCharset))
+		println("accumData:", accumData)
 		accumCount++
 		if accumCount == 2 {
 			bitBuf = bitBuf.AppendBits(uint32(accumData), 11)
 			accumData, accumCount = 0, 0
 		}
+		charCount++
 	}
 	if accumCount > 0 {
 		bitBuf = bitBuf.AppendBits(uint32(accumData), 6)
@@ -68,15 +73,13 @@ func makeSegments(text string) []QrSegment {
 	if text == "" {
 
 	} else if isNumeric(text) {
-		result = append(result, makeNumeric(text))
+		result = []QrSegment{makeNumeric(text)}
 	} else if isAlphanumeric(text) {
-		result = append(result, makeAlphanumeric(text))
+		result = []QrSegment{makeAlphanumeric(text)}
+		println("isAlphaNumeric")
 	} else {
-		var bytes []uint8
-		for _, char := range text {
-			bytes = append(bytes, uint8(char))
-		}
-		result = append(result, makeBytes(&bytes))
+		bytes := []uint8(text)
+		result = []QrSegment{makeBytes(&bytes)}
 	}
 	return result
 }
@@ -104,7 +107,7 @@ func getTotalBits(segs *[]QrSegment, version int) int {
 	result := 0
 	for _, seg := range *segs {
 		ccbits := seg.Mode.NumCharCountBits(version)
-		if uint64(seg.NumChars) >= (uint64(1) << uint64(ccbits)) {
+		if uint(seg.NumChars) >= (uint(1) << uint(ccbits)) {
 			return -1
 		}
 		if 4+ccbits > vars.MaxInt-result {

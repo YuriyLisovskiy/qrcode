@@ -21,8 +21,10 @@ func printQr(qr *qrcode.QrCode) {
 }
 
 func main() {
-	text := "Hello, world!"
+//	text := "HTTPS://GITHUB.COM/YURIYLISOVSKIY"
+	text := "https://github.com/YuriyLisovskiy"
+//	text := "10"
 	qr := qrcode.QrCode{}
-	qr = qr.EncodeText(text, utils.EccHIGH)
+	qr = qr.EncodeText(text, utils.EccLOW)
 	printQr(&qr)
 }
