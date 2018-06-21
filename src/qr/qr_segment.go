@@ -1,31 +1,29 @@
-package qrcode
+package qr
 
 import (
-	"strings"
-	"github.com/YuriyLisovskiy/qrcode/src/vars"
-	"github.com/YuriyLisovskiy/qrcode/src/utils"
 	"math"
+	"strings"
 )
 
-type QrSegment struct {
-	Mode     utils.Mode
+type qrSegment struct {
+	Mode     mode
 	NumChars int
 	Data     []bool
 }
 
-func makeBytes(data *[]uint8) QrSegment {
+func makeBytes(data *[]uint8) qrSegment {
 	if len(*data) > math.MaxInt32 {
 		panic("data too long")
 	}
-	bitBuf := utils.BitBuffer{}
+	bitBuf := bitBuffer{}
 	for _, bit := range *data {
 		bitBuf = bitBuf.AppendBits(uint32(bit), 8)
 	}
-	return QrSegment{vars.BYTE, len(*data), bitBuf}
+	return qrSegment{isBYTE, len(*data), bitBuf}
 }
 
-func makeNumeric(digits string) QrSegment {
-	bitBuf := utils.BitBuffer{}
+func makeNumeric(digits string) qrSegment {
+	bitBuf := bitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
 	for _, digit := range digits {
 		if digit < '0' || digit > '9' {
@@ -42,18 +40,18 @@ func makeNumeric(digits string) QrSegment {
 	if accumCount > 0 {
 		bitBuf = bitBuf.AppendBits(uint32(accumData), accumCount*3+1)
 	}
-	return QrSegment{vars.NUMERIC, charCount, bitBuf}
+	return qrSegment{isNUMERIC, charCount, bitBuf}
 }
 
-func makeAlphanumeric(text string) QrSegment {	// TODO: fix: accumData is incorrect, line 56
-	bitBuf := utils.BitBuffer{}
+func makeAlphanumeric(text string) qrSegment {	// TODO: fix: accumData is incorrect, line 56
+	bitBuf := bitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
 	println("Text:", text)
 	for _, char := range text {
-		if !strings.ContainsRune(vars.AlphanumericCharset, char) {
+		if !strings.ContainsRune(alphanumericCharset, char) {
 			panic("string contains unencodable characters in alphanumeric mode")
 		}
-		accumData = accumData*45 + (int(char) - len(vars.AlphanumericCharset))
+		accumData = accumData*45 + (int(char) - len(alphanumericCharset))
 		println("accumData:", accumData)
 		accumCount++
 		if accumCount == 2 {
@@ -65,26 +63,26 @@ func makeAlphanumeric(text string) QrSegment {	// TODO: fix: accumData is incorr
 	if accumCount > 0 {
 		bitBuf = bitBuf.AppendBits(uint32(accumData), 6)
 	}
-	return QrSegment{vars.ALPHANUMERIC, charCount, bitBuf}
+	return qrSegment{isALPHANUMERIC, charCount, bitBuf}
 }
 
-func makeSegments(text string) []QrSegment {
-	var result []QrSegment
+func makeSegments(text string) []qrSegment {
+	var result []qrSegment
 	if text == "" {
 
 	} else if isNumeric(text) {
-		result = []QrSegment{makeNumeric(text)}
+		result = []qrSegment{makeNumeric(text)}
 	} else if isAlphanumeric(text) {
-		result = []QrSegment{makeAlphanumeric(text)}
+		result = []qrSegment{makeAlphanumeric(text)}
 	} else {
 		bytes := []uint8(text)
-		result = []QrSegment{makeBytes(&bytes)}
+		result = []qrSegment{makeBytes(&bytes)}
 	}
 	return result
 }
 
-func (qrs QrSegment) makeEci(assignVal int64) QrSegment {
-	bitBuf := utils.BitBuffer{}
+func (qrs qrSegment) makeEci(assignVal int64) qrSegment {
+	bitBuf := bitBuffer{}
 	if 0 <= assignVal && assignVal < (1<<7) {
 		bitBuf = bitBuf.AppendBits(uint32(assignVal), 8)
 	} else if (1<<7) <= assignVal && assignVal < (1<<14) {
@@ -96,10 +94,10 @@ func (qrs QrSegment) makeEci(assignVal int64) QrSegment {
 	} else {
 		panic("ECI assignment value out of range")
 	}
-	return QrSegment{vars.ECI, 0, bitBuf}
+	return qrSegment{isECI, 0, bitBuf}
 }
 
-func getTotalBits(segs *[]QrSegment, version int) int {
+func getTotalBits(segs *[]qrSegment, version int) int {
 	if version < 1 || version > 40 {
 		panic("version number out of range")
 	}
@@ -109,11 +107,11 @@ func getTotalBits(segs *[]QrSegment, version int) int {
 		if uint(seg.NumChars) >= (uint(1) << uint(ccbits)) {
 			return -1
 		}
-		if 4+ccbits > vars.MaxInt-result {
+		if 4+ccbits > maxInt-result {
 			return -1
 		}
 		result += 4 + ccbits
-		if len(seg.Data) > (vars.MaxInt - result) {
+		if len(seg.Data) > (maxInt - result) {
 			return -1
 		}
 		result += len(seg.Data)
@@ -123,7 +121,7 @@ func getTotalBits(segs *[]QrSegment, version int) int {
 
 func isAlphanumeric(text string) bool {
 	for _, char := range text {
-		if !strings.ContainsRune(vars.AlphanumericCharset, char) {
+		if !strings.ContainsRune(alphanumericCharset, char) {
 			return false
 		}
 	}
@@ -139,14 +137,14 @@ func isNumeric(text string) bool {
 	return true
 }
 
-func (qrs QrSegment) getMode() utils.Mode {
+func (qrs qrSegment) getMode() mode {
 	return qrs.Mode
 }
 
-func (qrs QrSegment) getNumChars() int {
+func (qrs qrSegment) getNumChars() int {
 	return qrs.NumChars
 }
 
-func (qrs QrSegment) getData() *[]bool {
+func (qrs qrSegment) getData() *[]bool {
 	return &qrs.Data
 }

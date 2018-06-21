@@ -1,4 +1,4 @@
-package utils
+package qr
 
 type ReedSolomonGenerator struct {
 	Coefficients []uint8

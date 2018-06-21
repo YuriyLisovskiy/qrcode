@@ -1,71 +1,87 @@
-package qrcode
+package qr
 
-import (
-	"math"
-	"github.com/YuriyLisovskiy/qrcode/src/vars"
-	"github.com/YuriyLisovskiy/qrcode/src/utils"
-)
+import "math"
 
-type QrCode struct {
-	Version              int
-	Size                 int
-	ErrorCorrectionLevel utils.Ecc
-	Mask                 int
-	Modules              [][]bool
-	IsFunction           [][]bool
+type Generator struct {
+	version              int
+	size                 int
+	errorCorrectionLevel Ecc
+	mask                 int
+	modules              [][]bool
+	isFunction           [][]bool
 }
 
-func newQrCode(ver int, ecl utils.Ecc, dataCodewords []uint8, mask int) QrCode {
-	if ver < vars.MinVersion || ver > vars.MaxVersion || mask < -1 || mask > 7 {
+func (qrc *Generator) EncodeText(text string) Generator {
+	ecl := EccLOW
+	segments := makeSegments(text)
+	return qrc.encodeSegments(&segments, ecl, 1, 40, -1, true)
+}
+
+func (qrc *Generator) EncodeBinary(data *[]uint8) Generator {
+	ecl := EccLOW
+	return qrc.encodeSegments(&[]qrSegment{makeBytes(data)}, ecl, 1, 40, -1, true)
+}
+
+func (qrc *Generator) Draw(border, pixelSize int) {
+	for y := -border; y < qrc.GetSize() + border; y++ {
+		for x := -border; x < qrc.GetSize() + border; x++ {
+			if qrc.GetModule(x, y) {
+				print(make([]rune, pixelSize))
+			} else {
+				print("\u2588\u2588")
+			}
+		}
+		println()
+	}
+	println()
+}
+
+func (qrc *Generator) DrawFile(path string) {
+
+}
+
+func newQrCode(ver int, ecl Ecc, dataCodewords []uint8, mask int) Generator {
+	if ver < minVersion || ver > maxVersion || mask < -1 || mask > 7 {
 		panic("value out of range")
 	}
-	newQrCode := QrCode{Version: ver, ErrorCorrectionLevel: ecl}
-	if vars.MinVersion <= ver && ver <= vars.MaxVersion {
-		newQrCode.Size = ver*4 + 17
+	newQrCode := Generator{version: ver, errorCorrectionLevel: ecl}
+	if minVersion <= ver && ver <= maxVersion {
+		newQrCode.size = ver*4 + 17
 	} else {
-		newQrCode.Size = -1
+		newQrCode.size = -1
 	}
-	newQrCode.Modules = make([][]bool, newQrCode.Size)
-	for i := range newQrCode.Modules {
-		newQrCode.Modules[i] = make([]bool, newQrCode.Size)
+	newQrCode.modules = make([][]bool, newQrCode.size)
+	for i := range newQrCode.modules {
+		newQrCode.modules[i] = make([]bool, newQrCode.size)
 	}
-	newQrCode.IsFunction = make([][]bool, newQrCode.Size)
-	for i := range newQrCode.IsFunction {
-		newQrCode.IsFunction[i] = make([]bool, newQrCode.Size)
+	newQrCode.isFunction = make([][]bool, newQrCode.size)
+	for i := range newQrCode.isFunction {
+		newQrCode.isFunction[i] = make([]bool, newQrCode.size)
 	}
 	newQrCode.drawFunctionPatterns()
 	allCodewords := newQrCode.appendErrorCorrection(&dataCodewords)
 	newQrCode.drawCodewords(&allCodewords)
-	newQrCode.Mask = newQrCode.handleConstructorMasking(mask)
+	newQrCode.mask = newQrCode.handleConstructorMasking(mask)
 	return newQrCode
 }
 
-func (qrc *QrCode) getFormatBits(ecl utils.Ecc) int {
+func (qrc *Generator) getFormatBits(ecl Ecc) int {
 	switch ecl {
-	case utils.EccLOW:
+	case EccLOW:
 		return 1
-	case utils.EccMEDIUM:
+	case EccMEDIUM:
 		return 0
-	case utils.EccQUARTILE:
+	case EccQUARTILE:
 		return 3
-	case utils.EccHIGH:
+	case EccHIGH:
 		return 2
 	default:
 		panic("assertion error")
 	}
 }
 
-func (qrc *QrCode) EncodeText(text string, ecl utils.Ecc) QrCode {
-	segments := makeSegments(text)
-	return qrc.encodeSegments(&segments, ecl, 1, 40, -1, true)
-}
-
-func (qrc *QrCode) EncodeBinary(data *[]uint8, ecl utils.Ecc) QrCode {
-	return qrc.encodeSegments(&[]QrSegment{makeBytes(data)}, ecl, 1, 40, -1, true)
-}
-
-func (qrc *QrCode) encodeSegments(segs *[]QrSegment, ecl utils.Ecc, minVersion, maxVersion, mask int, boostEcl bool) QrCode {
-	if !(vars.MinVersion <= minVersion && minVersion <= maxVersion && maxVersion <= vars.MaxVersion) || mask < -1 || mask > 7 {
+func (qrc *Generator) encodeSegments(segs *[]qrSegment, ecl Ecc, minVersion, maxVersion, mask int, boostEcl bool) Generator {
+	if !(minVersion <= minVersion && minVersion <= maxVersion && maxVersion <= maxVersion) || mask < -1 || mask > 7 {
 		panic("invalid value")
 	}
 	var version, dataUsedBits int
@@ -82,13 +98,13 @@ func (qrc *QrCode) encodeSegments(segs *[]QrSegment, ecl utils.Ecc, minVersion, 
 	if dataUsedBits == -1 {
 		panic("assertion error")
 	}
-	for _, newEcl := range []utils.Ecc{utils.EccMEDIUM, utils.EccQUARTILE, utils.EccHIGH} {
+	for _, newEcl := range []Ecc{EccMEDIUM, EccQUARTILE, EccHIGH} {
 		if boostEcl && dataUsedBits <= qrc.getNumDataCodewords(version, newEcl)*8 {
 			ecl = newEcl
 		}
 	}
 	dataCapacityBits := uint(qrc.getNumDataCodewords(version, ecl) * 8)
-	var bitBuf utils.BitBuffer
+	var bitBuf bitBuffer
 	for _, seg := range *segs {
 		bitBuf = bitBuf.AppendBits(uint32(seg.getMode().GetModeBits()), 4)
 		bitBuf = bitBuf.AppendBits(uint32(seg.getNumChars()), seg.getMode().NumCharCountBits(version))
@@ -102,46 +118,46 @@ func (qrc *QrCode) encodeSegments(segs *[]QrSegment, ecl utils.Ecc, minVersion, 
 	if len(bitBuf)%8 != 0 {
 		panic("assertion error")
 	}
-	return newQrCode(version, ecl, bitBuf.GetBytes(), mask)
+	return newQrCode(version, ecl, bitBuf.getBytes(), mask)
 }
 
-func (qrc *QrCode) getVersion() int {
-	return qrc.Version
+func (qrc *Generator) getVersion() int {
+	return qrc.version
 }
 
-func (qrc *QrCode) GetSize() int {
-	return qrc.Size
+func (qrc *Generator) GetSize() int {
+	return qrc.size
 }
 
-func (qrc *QrCode) getErrorCorrectionLevel() utils.Ecc {
-	return qrc.ErrorCorrectionLevel
+func (qrc *Generator) getErrorCorrectionLevel() Ecc {
+	return qrc.errorCorrectionLevel
 }
 
-func (qrc *QrCode) getMask() int {
-	return qrc.Mask
+func (qrc *Generator) getMask() int {
+	return qrc.mask
 }
 
-func (qrc *QrCode) GetModule(x, y int) bool {
-	return 0 <= x && x < qrc.Size && 0 <= y && y < qrc.Size && qrc.module(x, y)
+func (qrc *Generator) GetModule(x, y int) bool {
+	return 0 <= x && x < qrc.size && 0 <= y && y < qrc.size && qrc.module(x, y)
 }
 
-func (qrc *QrCode) module(x, y int) bool {
-	return qrc.Modules[y][x]
+func (qrc *Generator) module(x, y int) bool {
+	return qrc.modules[y][x]
 }
 
-func (qrc *QrCode) getBit(x int, i uint) bool {
+func (qrc *Generator) getBit(x int, i uint) bool {
 	return ((x >> i) & 1) != 0
 }
 
-func (qrc *QrCode) drawFunctionPatterns() {
-	for i := 0; i < qrc.Size; i++ {
+func (qrc *Generator) drawFunctionPatterns() {
+	for i := 0; i < qrc.size; i++ {
 		qrc.setFunctionModule(6, i, i%2 == 0)
 		qrc.setFunctionModule(i, 6, i%2 == 0)
 	}
 	qrc.drawFinderPattern(3, 3)
-	qrc.drawFinderPattern(qrc.Size-4, 3)
-	qrc.drawFinderPattern(3, qrc.Size-4)
-	alignPatPos := []int(qrc.getAlignmentPatternPositions(qrc.Version))
+	qrc.drawFinderPattern(qrc.size-4, 3)
+	qrc.drawFinderPattern(3, qrc.size-4)
+	alignPatPos := []int(qrc.getAlignmentPatternPositions(qrc.version))
 	numAlign := len(alignPatPos)
 
 	for i := 0; i < numAlign; i++ {
@@ -157,8 +173,8 @@ func (qrc *QrCode) drawFunctionPatterns() {
 	qrc.drawVersion()
 }
 
-func (qrc *QrCode) drawFormatBits(mask int) {
-	data := int(qrc.getFormatBits(qrc.ErrorCorrectionLevel)<<3 | mask)
+func (qrc *Generator) drawFormatBits(mask int) {
+	data := int(qrc.getFormatBits(qrc.errorCorrectionLevel)<<3 | mask)
 	rem := int(data)
 	for i := 0; i < 10; i++ {
 		rem = (rem << 1) ^ ((rem >> 9) * 0x537)
@@ -178,47 +194,47 @@ func (qrc *QrCode) drawFormatBits(mask int) {
 		qrc.setFunctionModule(14-i, 8, qrc.getBit(int(data), uint(i)))
 	}
 	for i := 0; i <= 7; i++ {
-		qrc.setFunctionModule(qrc.Size-1-i, 8, qrc.getBit(int(data), uint(i)))
+		qrc.setFunctionModule(qrc.size-1-i, 8, qrc.getBit(int(data), uint(i)))
 	}
 	for i := 8; i < 15; i++ {
-		qrc.setFunctionModule(8, qrc.Size-15+i, qrc.getBit(int(data), uint(i)))
+		qrc.setFunctionModule(8, qrc.size-15+i, qrc.getBit(int(data), uint(i)))
 	}
-	qrc.setFunctionModule(8, qrc.Size-8, true)
+	qrc.setFunctionModule(8, qrc.size-8, true)
 }
 
-func (qrc *QrCode) drawVersion() {
-	if qrc.Version < 7 {
+func (qrc *Generator) drawVersion() {
+	if qrc.version < 7 {
 		return
 	}
-	rem := int(qrc.Version)
+	rem := int(qrc.version)
 	for i := 0; i < 12; i++ {
 		rem = (rem << 1) ^ ((rem >> 11) * 0x1F25)
 	}
-	data := int(qrc.Version)<<12 | int(rem)
+	data := int(qrc.version)<<12 | int(rem)
 	if data>>18 != 0 {
 		panic("assertion error")
 	}
 	for i := 0; i < 18; i++ {
 		bit := qrc.getBit(int(data), uint(i))
-		a, b := int(qrc.Size-11+i%3), int(i/3)
+		a, b := int(qrc.size-11+i%3), int(i/3)
 		qrc.setFunctionModule(a, b, bit)
 		qrc.setFunctionModule(b, a, bit)
 	}
 }
 
-func (qrc *QrCode) drawFinderPattern(x, y int) {
+func (qrc *Generator) drawFinderPattern(x, y int) {
 	for i := -4; i <= 4; i++ {
 		for j := -4; j <= 4; j++ {
 			dist := int(math.Max(math.Abs(float64(i)), math.Abs(float64(j))))
 			xx, yy := int(x+j), int(y+i)
-			if 0 <= xx && xx < qrc.Size && 0 <= yy && yy < qrc.Size {
+			if 0 <= xx && xx < qrc.size && 0 <= yy && yy < qrc.size {
 				qrc.setFunctionModule(xx, yy, dist != 2 && dist != 4)
 			}
 		}
 	}
 }
 
-func (qrc *QrCode) drawAlignmentPattern(x, y int) {
+func (qrc *Generator) drawAlignmentPattern(x, y int) {
 	for i := -2; i <= 2; i++ {
 		for j := -2; j <= 2; j++ {
 			qrc.setFunctionModule(x+j, y+i, math.Max(math.Abs(float64(i)), math.Abs(float64(j))) != 1)
@@ -226,22 +242,21 @@ func (qrc *QrCode) drawAlignmentPattern(x, y int) {
 	}
 }
 
-func (qrc *QrCode) setFunctionModule(x, y int, isBlack bool) {
-	qrc.Modules[y][x] = isBlack
-	qrc.IsFunction[y][x] = true
+func (qrc *Generator) setFunctionModule(x, y int, isBlack bool) {
+	qrc.modules[y][x], qrc.isFunction[y][x] = isBlack, true
 }
 
-func (qrc *QrCode) appendErrorCorrection(data *[]uint8) []uint8 {
-	if len(*data) != qrc.getNumDataCodewords(qrc.Version, qrc.ErrorCorrectionLevel) {
+func (qrc *Generator) appendErrorCorrection(data *[]uint8) []uint8 {
+	if len(*data) != qrc.getNumDataCodewords(qrc.version, qrc.errorCorrectionLevel) {
 		panic("invalid argument")
 	}
-	numBlocks := int(vars.NumErrorCorrectionBlocks[int(qrc.ErrorCorrectionLevel)][qrc.Version])
-	blockEccLen := int(vars.EccCodewordsPerBlock[int(qrc.ErrorCorrectionLevel)][qrc.Version])
-	rawCodewords := int(qrc.getNumRawDataModules(qrc.Version) / 8)
+	numBlocks := int(numErrorCorrectionBlocks[int(qrc.errorCorrectionLevel)][qrc.version])
+	blockEccLen := int(eccCodewordsPerBlock[int(qrc.errorCorrectionLevel)][qrc.version])
+	rawCodewords := int(qrc.getNumRawDataModules(qrc.version) / 8)
 	numShortBlocks := int(numBlocks - rawCodewords%numBlocks)
 	shortBlockLen := int(rawCodewords / numBlocks)
 	var blocks [][]uint8
-	rs := utils.NewReedSolomonGenerator(blockEccLen)
+	rs := NewReedSolomonGenerator(blockEccLen)
 	i, k := 0, 0
 	for ; i < numBlocks; i++ {
 		c := 1
@@ -271,24 +286,24 @@ func (qrc *QrCode) appendErrorCorrection(data *[]uint8) []uint8 {
 	return result
 }
 
-func (qrc *QrCode) drawCodewords(data *[]uint8) {
-	if len(*data) != qrc.getNumRawDataModules(qrc.Version)/8 {
+func (qrc *Generator) drawCodewords(data *[]uint8) {
+	if len(*data) != qrc.getNumRawDataModules(qrc.version)/8 {
 		panic("invalid argument")
 	}
 	i := uint(0)
-	for right := qrc.Size - 1; right >= 1; right -= 2 {
+	for right := qrc.size - 1; right >= 1; right -= 2 {
 		if right == 6 {
 			right = 5
 		}
-		for vert := 0; vert < qrc.Size; vert++ {
+		for vert := 0; vert < qrc.size; vert++ {
 			for j := 0; j < 2; j++ {
 				x := int(right - j)
 				y := vert
 				if ((right + 1) & 2) == 0 {
-					y = qrc.Size - 1 - vert
+					y = qrc.size - 1 - vert
 				}
-				if !qrc.IsFunction[y][x] && i < uint(len(*data)*8) {
-					qrc.Modules[y][x] = qrc.getBit(int((*data)[i>>3]), uint(7-(int(i&7))))
+				if !qrc.isFunction[y][x] && i < uint(len(*data)*8) {
+					qrc.modules[y][x] = qrc.getBit(int((*data)[i>>3]), uint(7-(int(i&7))))
 					i++
 				}
 			}
@@ -299,12 +314,12 @@ func (qrc *QrCode) drawCodewords(data *[]uint8) {
 	}
 }
 
-func (qrc *QrCode) applyMask(mask int) {
+func (qrc *Generator) applyMask(mask int) {
 	if mask < 0 || mask > 7 {
 		panic("mask value out of range")
 	}
-	for y := 0; y < qrc.Size; y++ {
-		for x := 0; x < qrc.Size; x++ {
+	for y := 0; y < qrc.size; y++ {
+		for x := 0; x < qrc.size; x++ {
 			var invert bool
 			switch mask {
 			case 0:
@@ -326,14 +341,14 @@ func (qrc *QrCode) applyMask(mask int) {
 			default:
 				panic("assertion error")
 			}
-			qrc.Modules[y][x] = utils.XOR(qrc.Modules[y][x], invert && !qrc.IsFunction[y][x])
+			qrc.modules[y][x] = XOR(qrc.modules[y][x], invert && !qrc.isFunction[y][x])
 		}
 	}
 }
 
-func (qrc *QrCode) handleConstructorMasking(mask int) int {
+func (qrc *Generator) handleConstructorMasking(mask int) int {
 	if mask == -1 {
-		minPenalty := vars.MaxInt	// TODO: MaxInt32
+		minPenalty := maxInt	// TODO: MaxInt32
 		for i := 0; i < 8; i++ {
 			qrc.drawFormatBits(i)
 			qrc.applyMask(i)
@@ -353,93 +368,93 @@ func (qrc *QrCode) handleConstructorMasking(mask int) int {
 	return mask
 }
 
-func (qrc *QrCode) getPenaltyScore() int64 {
+func (qrc *Generator) getPenaltyScore() int64 {
 	result := int64(0)
-	for y := 0; y < qrc.Size; y++ {
+	for y := 0; y < qrc.size; y++ {
 		colorX := false
 		runX := -1
-		for x := 0; x < qrc.Size; x++ {
+		for x := 0; x < qrc.size; x++ {
 			if x == 0 || qrc.module(x, y) != colorX {
 				colorX = qrc.module(x, y)
 				runX = 1
 			} else {
 				runX++
 				if runX == 5 {
-					result += vars.PENALTY_N1
+					result += penaltyN1
 				} else if runX > 5 {
 					result++
 				}
 			}
 		}
 	}
-	for x := 0; x < qrc.Size; x++ {
+	for x := 0; x < qrc.size; x++ {
 		colorY := false
 		runY := -1
-		for y := 0; y < qrc.Size; y++ {
+		for y := 0; y < qrc.size; y++ {
 			if y == 0 || qrc.module(x, y) != colorY {
 				colorY = qrc.module(x, y)
 				runY = 1
 			} else {
 				runY++
 				if runY == 5 {
-					result += vars.PENALTY_N1
+					result += penaltyN1
 				} else if runY > 5 {
 					result++
 				}
 			}
 		}
 	}
-	for y := 0; y < qrc.Size-1; y++ {
-		for x := 0; x < qrc.Size-1; x++ {
+	for y := 0; y < qrc.size-1; y++ {
+		for x := 0; x < qrc.size-1; x++ {
 			color := qrc.module(x, y)
 			if color == qrc.module(x+1, y) && color == qrc.module(x, y+1) && color == qrc.module(x+1, y+1) {
-				result += vars.PENALTY_N2
+				result += penaltyN2
 			}
 		}
 	}
-	for y := 0; y < qrc.Size; y++ {
+	for y := 0; y < qrc.size; y++ {
 		bits := 0
-		for x := 0; x < qrc.Size; x++ {
+		for x := 0; x < qrc.size; x++ {
 			t := 0
 			if qrc.module(x, y) {
 				t = 1
 			}
 			bits = ((bits << 1) & 0x7FF) | t
 			if x >= 10 && (bits == 0x05D || bits == 0x5D0) {
-				result += vars.PENALTY_N3
+				result += penaltyN3
 			}
 		}
 	}
-	for x := 0; x < qrc.Size; x++ {
+	for x := 0; x < qrc.size; x++ {
 		bits := 0
-		for y := 0; y < qrc.Size; y++ {
+		for y := 0; y < qrc.size; y++ {
 			t := 0
 			if qrc.module(x, y) {
 				t = 1
 			}
 			bits = ((bits << 1) & 0x7FF) | t
 			if y >= 10 && (bits == 0x05D || bits == 0x5D0) {
-				result += vars.PENALTY_N3
+				result += penaltyN3
 			}
 		}
 	}
 	black := 0
-	for _, row := range qrc.Modules {
+	for _, row := range qrc.modules {
 		for _, color := range row {
 			if color {
 				black++
 			}
 		}
 	}
-	total := qrc.Size * qrc.Size
+	total := qrc.size * qrc.size
 	for k := 0; black*int(20) < (int(9)-k)*total || black*int(20) > (int(11)+k)*total; k++ {
-		result += vars.PENALTY_N4
+		result += penaltyN4
 	}
 	return result
 }
 
-func (qrc *QrCode) getAlignmentPatternPositions(ver int) []int {
-	if ver < vars.MinVersion || ver > vars.MaxVersion {
+func (qrc *Generator) getAlignmentPatternPositions(ver int) []int {
+	if ver < minVersion || ver > maxVersion {
 		panic("Version number out of range")
 	} else if ver == 1 {
 		return []int{}
@@ -462,8 +477,8 @@ func (qrc *QrCode) getAlignmentPatternPositions(ver int) []int {
 	}
 }
 
-func (qrc *QrCode) getNumRawDataModules(ver int) int {
-	if ver < vars.MinVersion || ver > vars.MaxVersion {
+func (qrc *Generator) getNumRawDataModules(ver int) int {
+	if ver < minVersion || ver > maxVersion {
 		panic("version number out of range")
 	}
 	result := int((16 * ver + 128) * ver + 64)
@@ -477,9 +492,9 @@ func (qrc *QrCode) getNumRawDataModules(ver int) int {
 	return result
 }
 
-func (qrc *QrCode) getNumDataCodewords(ver int, ecl utils.Ecc) int {
-	if ver < vars.MinVersion || ver > vars.MaxVersion {
+func (qrc *Generator) getNumDataCodewords(ver int, ecl Ecc) int {
+	if ver < minVersion || ver > maxVersion {
 		panic("version number out of range")
 	}
-	return qrc.getNumRawDataModules(ver) / 8 - vars.EccCodewordsPerBlock[int(ecl)][ver] * vars.NumErrorCorrectionBlocks[int(ecl)][ver]
+	return qrc.getNumRawDataModules(ver) / 8 - eccCodewordsPerBlock[int(ecl)][ver] * numErrorCorrectionBlocks[int(ecl)][ver]
 }
