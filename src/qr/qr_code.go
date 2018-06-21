@@ -22,13 +22,13 @@ func (qrc *Generator) EncodeBinary(data *[]uint8) Generator {
 	return qrc.encodeSegments(&[]qrSegment{makeBytes(data)}, ecl, 1, 40, -1, true)
 }
 
-func (qrc *Generator) Draw(border, pixelSize int) {
-	for y := -border; y < qrc.GetSize() + border; y++ {
-		for x := -border; x < qrc.GetSize() + border; x++ {
-			if qrc.GetModule(x, y) {
-				print(makePixel(pixelSize, "  "))
+func (qrc *Generator) Draw(border int) {
+	for y := -border; y < qrc.getSize() + border; y++ {
+		for x := -border; x < qrc.getSize() + border; x++ {
+			if qrc.getModule(x, y) {
+				print("  ")
 			} else {
-				print(makePixel(pixelSize, "\u2588\u2588"))
+				print("\u2588\u2588")
 			}
 		}
 		println()
@@ -36,7 +36,7 @@ func (qrc *Generator) Draw(border, pixelSize int) {
 	println()
 }
 
-func (qrc *Generator) DrawFile(path string) {
+func (qrc *Generator) DrawImage(path string) {
 	// TODO: implement function
 }
 
@@ -125,7 +125,7 @@ func (qrc *Generator) getVersion() int {
 	return qrc.version
 }
 
-func (qrc *Generator) GetSize() int {
+func (qrc *Generator) getSize() int {
 	return qrc.size
 }
 
@@ -137,7 +137,7 @@ func (qrc *Generator) getMask() int {
 	return qrc.mask
 }
 
-func (qrc *Generator) GetModule(x, y int) bool {
+func (qrc *Generator) getModule(x, y int) bool {
 	return 0 <= x && x < qrc.size && 0 <= y && y < qrc.size && qrc.module(x, y)
 }
 
@@ -256,7 +256,7 @@ func (qrc *Generator) appendErrorCorrection(data *[]uint8) []uint8 {
 	numShortBlocks := int(numBlocks - rawCodewords%numBlocks)
 	shortBlockLen := int(rawCodewords / numBlocks)
 	var blocks [][]uint8
-	rs := NewReedSolomonGenerator(blockEccLen)
+	rs := newReedSolomonGenerator(blockEccLen)
 	i, k := 0, 0
 	for ; i < numBlocks; i++ {
 		c := 1

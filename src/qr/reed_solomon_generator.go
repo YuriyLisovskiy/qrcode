@@ -4,7 +4,7 @@ type reedSolomonGenerator struct {
 	Coefficients []uint8
 }
 
-func NewReedSolomonGenerator(degree int) reedSolomonGenerator {
+func newReedSolomonGenerator(degree int) reedSolomonGenerator {
 	newRSG := reedSolomonGenerator{}
 	if degree < 1 || degree > 255 {
 		panic("degree out of range")
