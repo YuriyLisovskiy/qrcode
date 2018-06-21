@@ -1,11 +1,11 @@
 package qr
 
-type ReedSolomonGenerator struct {
+type reedSolomonGenerator struct {
 	Coefficients []uint8
 }
 
-func NewReedSolomonGenerator(degree int) ReedSolomonGenerator {
-	newRSG := ReedSolomonGenerator{}
+func NewReedSolomonGenerator(degree int) reedSolomonGenerator {
+	newRSG := reedSolomonGenerator{}
 	if degree < 1 || degree > 255 {
 		panic("degree out of range")
 	}
@@ -24,7 +24,7 @@ func NewReedSolomonGenerator(degree int) ReedSolomonGenerator {
 	return newRSG
 }
 
-func (rsg ReedSolomonGenerator) GetRemainder(data *[]uint8) []uint8 {
+func (rsg reedSolomonGenerator) GetRemainder(data *[]uint8) []uint8 {
 	result := make([]uint8, len(rsg.Coefficients))
 	for _, b := range *data {
 		factor := b ^ result[0]
@@ -37,7 +37,7 @@ func (rsg ReedSolomonGenerator) GetRemainder(data *[]uint8) []uint8 {
 	return result
 }
 
-func (rsg ReedSolomonGenerator) multiply(x, y uint8) uint8 {
+func (rsg reedSolomonGenerator) multiply(x, y uint8) uint8 {
 	z := 0
 	for i := 7; i >= 0; i-- {
 		z = (z << 1) ^ ((z >> 7) * 0x11D)

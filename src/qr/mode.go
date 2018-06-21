@@ -1,23 +1,23 @@
 package qr
 
-type mode struct {
+type modeType struct {
 	ModeBits         int
 	NumBitsCharCount [3]int
 }
 
-func newMode(mode, cc0, cc1, cc2 int) mode {
-	newMode := mode{ModeBits: mode}
+func newMode(mode, cc0, cc1, cc2 int) modeType {
+	newMode := modeType{ModeBits: mode}
 	newMode.NumBitsCharCount[0] = cc0
 	newMode.NumBitsCharCount[1] = cc1
 	newMode.NumBitsCharCount[2] = cc2
 	return newMode
 }
 
-func (m mode) GetModeBits() int {
+func (m modeType) GetModeBits() int {
 	return m.ModeBits
 }
 
-func (m mode) NumCharCountBits(ver int) int {
+func (m modeType) NumCharCountBits(ver int) int {
 	if 1 <= ver && ver <= 9 {
 		return m.NumBitsCharCount[0]
 	}

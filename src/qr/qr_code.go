@@ -5,20 +5,20 @@ import "math"
 type Generator struct {
 	version              int
 	size                 int
-	errorCorrectionLevel Ecc
+	errorCorrectionLevel eccType
 	mask                 int
 	modules              [][]bool
 	isFunction           [][]bool
 }
 
 func (qrc *Generator) EncodeText(text string) Generator {
-	ecl := EccLOW
+	ecl := eccLOW
 	segments := makeSegments(text)
 	return qrc.encodeSegments(&segments, ecl, 1, 40, -1, true)
 }
 
 func (qrc *Generator) EncodeBinary(data *[]uint8) Generator {
-	ecl := EccLOW
+	ecl := eccLOW
 	return qrc.encodeSegments(&[]qrSegment{makeBytes(data)}, ecl, 1, 40, -1, true)
 }
 
@@ -26,9 +26,9 @@ func (qrc *Generator) Draw(border, pixelSize int) {
 	for y := -border; y < qrc.GetSize() + border; y++ {
 		for x := -border; x < qrc.GetSize() + border; x++ {
 			if qrc.GetModule(x, y) {
-				print(make([]rune, pixelSize))
+				print(makePixel(pixelSize, "  "))
 			} else {
-				print("\u2588\u2588")
+				print(makePixel(pixelSize, "\u2588\u2588"))
 			}
 		}
 		println()
@@ -37,10 +37,10 @@ func (qrc *Generator) Draw(border, pixelSize int) {
 }
 
 func (qrc *Generator) DrawFile(path string) {
-
+	// TODO: implement function
 }
 
-func newQrCode(ver int, ecl Ecc, dataCodewords []uint8, mask int) Generator {
+func newQrCode(ver int, ecl eccType, dataCodewords []uint8, mask int) Generator {
 	if ver < minVersion || ver > maxVersion || mask < -1 || mask > 7 {
 		panic("value out of range")
 	}
@@ -65,22 +65,22 @@ func newQrCode(ver int, ecl Ecc, dataCodewords []uint8, mask int) Generator {
 	return newQrCode
 }
 
-func (qrc *Generator) getFormatBits(ecl Ecc) int {
+func (qrc *Generator) getFormatBits(ecl eccType) int {
 	switch ecl {
-	case EccLOW:
+	case eccLOW:
 		return 1
-	case EccMEDIUM:
+	case eccMEDIUM:
 		return 0
-	case EccQUARTILE:
+	case eccQUARTILE:
 		return 3
-	case EccHIGH:
+	case eccHIGH:
 		return 2
 	default:
 		panic("assertion error")
 	}
 }
 
-func (qrc *Generator) encodeSegments(segs *[]qrSegment, ecl Ecc, minVersion, maxVersion, mask int, boostEcl bool) Generator {
+func (qrc *Generator) encodeSegments(segs *[]qrSegment, ecl eccType, minVersion, maxVersion, mask int, boostEcl bool) Generator {
 	if !(minVersion <= minVersion && minVersion <= maxVersion && maxVersion <= maxVersion) || mask < -1 || mask > 7 {
 		panic("invalid value")
 	}
@@ -98,7 +98,7 @@ func (qrc *Generator) encodeSegments(segs *[]qrSegment, ecl Ecc, minVersion, max
 	if dataUsedBits == -1 {
 		panic("assertion error")
 	}
-	for _, newEcl := range []Ecc{EccMEDIUM, EccQUARTILE, EccHIGH} {
+	for _, newEcl := range []eccType{eccMEDIUM, eccQUARTILE, eccHIGH} {
 		if boostEcl && dataUsedBits <= qrc.getNumDataCodewords(version, newEcl)*8 {
 			ecl = newEcl
 		}
@@ -129,7 +129,7 @@ func (qrc *Generator) GetSize() int {
 	return qrc.size
 }
 
-func (qrc *Generator) getErrorCorrectionLevel() Ecc {
+func (qrc *Generator) getErrorCorrectionLevel() eccType {
 	return qrc.errorCorrectionLevel
 }
 
@@ -341,7 +341,7 @@ func (qrc *Generator) applyMask(mask int) {
 			default:
 				panic("assertion error")
 			}
-			qrc.modules[y][x] = XOR(qrc.modules[y][x], invert && !qrc.isFunction[y][x])
+			qrc.modules[y][x] = xor(qrc.modules[y][x], invert && !qrc.isFunction[y][x])
 		}
 	}
 }
@@ -492,7 +492,7 @@ func (qrc *Generator) getNumRawDataModules(ver int) int {
 	return result
 }
 
-func (qrc *Generator) getNumDataCodewords(ver int, ecl Ecc) int {
+func (qrc *Generator) getNumDataCodewords(ver int, ecl eccType) int {
 	if ver < minVersion || ver > maxVersion {
 		panic("version number out of range")
 	}

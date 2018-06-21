@@ -6,7 +6,7 @@ import (
 )
 
 type qrSegment struct {
-	Mode     mode
+	Mode     modeType
 	NumChars int
 	Data     []bool
 }
@@ -137,7 +137,7 @@ func isNumeric(text string) bool {
 	return true
 }
 
-func (qrs qrSegment) getMode() mode {
+func (qrs qrSegment) getMode() modeType {
 	return qrs.Mode
 }
 

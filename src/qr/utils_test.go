@@ -17,7 +17,7 @@ var (
 
 func TestXOR(test *testing.T) {
 	for _, td := range XORTestData {
-		actual := XOR(td.Expr1, td.Expr2)
+		actual := xor(td.Expr1, td.Expr2)
 		if actual != td.Expected {
 			test.Errorf("utils.TestXOR: expected %t, actual %t", td.Expected, actual)
 		}
