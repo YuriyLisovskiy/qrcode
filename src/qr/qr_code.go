@@ -1,6 +1,13 @@
 package qr
 
-import "math"
+import (
+	"os"
+	"math"
+	"image"
+	"image/png"
+	"image/draw"
+	"image/color"
+)
 
 type Generator struct {
 	version              int
@@ -21,8 +28,8 @@ func (qrc *Generator) EncodeBinary(data *[]uint8) Generator {
 }
 
 func (qrc *Generator) Draw(border int) {
-	for y := -border; y < qrc.getSize() + border; y++ {
-		for x := -border; x < qrc.getSize() + border; x++ {
+	for y := -border; y < qrc.getSize()+border; y++ {
+		for x := -border; x < qrc.getSize()+border; x++ {
 			if qrc.getModule(x, y) {
 				print("  ")
 			} else {
@@ -34,8 +41,23 @@ func (qrc *Generator) Draw(border int) {
 	println()
 }
 
-func (qrc *Generator) DrawImage(path string) {
-	// TODO: implement function
+func (qrc *Generator) DrawImage(path string, border int) {
+	size := qrc.getSize() + border*2
+	img := image.NewRGBA(image.Rect(0, 0, size, size))
+	draw.Draw(img, img.Bounds(), &image.Uniform{color.RGBA{255, 255, 255, 255}}, image.ZP, draw.Src)
+	for y := 0; y < size; y++ {
+		for x := 0; x < size; x++ {
+			if qrc.getModule(x, y) {
+				img.Set(x+border, y+border, color.RGBA{0, 0, 0, 255})
+			}
+		}
+	}
+	file, err := os.Create(path)
+	defer file.Close()
+	if err != nil {
+		panic(err)
+	}
+	png.Encode(file, img)
 }
 
 func newQrCode(ver int, ecl eccType, dataCodewords []uint8, mask int) Generator {
@@ -263,7 +285,7 @@ func (qrc *Generator) appendErrorCorrection(data []uint8) []uint8 {
 			c = 0
 		}
 		end := start + shortBlockLen - blockEccLen + c
-		dat := make([]uint8, end - start)
+		dat := make([]uint8, end-start)
 		copy(dat, []uint8(data[start:end]))
 		start += len(dat)
 		ecc := []uint8(rs.GetRemainder(&dat))
@@ -305,7 +327,7 @@ func (qrc *Generator) drawCodewords(data *[]uint8) {
 					y = qrc.size - 1 - vert
 				}
 				if !qrc.isFunction[y][x] && i < uint(len(*data)*8) {
-					qrc.modules[y][x] = qrc.getBit(int((*data)[i>>3]), uint(7-(int(i&7))))
+					qrc.modules[y][x] = qrc.getBit(int((*data)[i>>3]), uint(7-(int(i & 7))))
 					i++
 				}
 			}
@@ -350,7 +372,7 @@ func (qrc *Generator) applyMask(mask int) {
 
 func (qrc *Generator) handleConstructorMasking(mask int) int {
 	if mask == -1 {
-		minPenalty := math.MaxInt32	// TODO: MaxInt32
+		minPenalty := math.MaxInt32
 		for i := 0; i < 8; i++ {
 			qrc.drawFormatBits(i)
 			qrc.applyMask(i)
@@ -408,8 +430,8 @@ func (qrc *Generator) getPenaltyScore() int {
 	}
 	for y := 0; y < qrc.size-1; y++ {
 		for x := 0; x < qrc.size-1; x++ {
-			color := qrc.module(x, y)
-			if color == qrc.module(x+1, y) && color == qrc.module(x, y+1) && color == qrc.module(x+1, y+1) {
+			colour := qrc.module(x, y)
+			if colour == qrc.module(x+1, y) && colour == qrc.module(x, y+1) && colour == qrc.module(x+1, y+1) {
 				result += penaltyN2
 			}
 		}
@@ -442,8 +464,8 @@ func (qrc *Generator) getPenaltyScore() int {
 	}
 	black := 0
 	for _, row := range qrc.modules {
-		for _, color := range row {
-			if color {
+		for _, colour := range row {
+			if colour {
 				black++
 			}
 		}
@@ -461,16 +483,16 @@ func (qrc *Generator) getAlignmentPatternPositions(ver int) []int {
 	} else if ver == 1 {
 		return []int{}
 	} else {
-		numAlign := int(ver / 7 + 2)
+		numAlign := int(ver/7 + 2)
 		var step int
 		if ver != 32 {
-			step = (ver * 4 + numAlign * 2 + 1) / (2 * numAlign - 2) * 2
+			step = (ver*4 + numAlign*2 + 1) / (2*numAlign - 2) * 2
 		} else {
 			step = 26
 		}
 		var result []int
-		pos := int(ver * 4 + 10)
-		for i := 0; i < numAlign - 1; i++ {
+		pos := int(ver*4 + 10)
+		for i := 0; i < numAlign-1; i++ {
 			result = append([]int{pos}, result...)
 			pos -= step
 		}
@@ -483,10 +505,10 @@ func (qrc *Generator) getNumRawDataModules(ver int) int {
 	if ver < minVersion || ver > maxVersion {
 		panic("version number out of range")
 	}
-	result := int((16 * ver + 128) * ver + 64)
+	result := int((16*ver+128)*ver + 64)
 	if ver >= 2 {
-		numAlign := int(ver / 7 + 2)
-		result -= (25 * numAlign - 10) * numAlign - 55
+		numAlign := int(ver/7 + 2)
+		result -= (25*numAlign-10)*numAlign - 55
 		if ver >= 7 {
 			result -= 18 * 2
 		}
@@ -498,5 +520,5 @@ func (qrc *Generator) getNumDataCodewords(ver int, ecl eccType) int {
 	if ver < minVersion || ver > maxVersion {
 		panic("version number out of range")
 	}
-	return qrc.getNumRawDataModules(ver) / 8 - eccCodewordsPerBlock[int(ecl)][ver] * numErrorCorrectionBlocks[int(ecl)][ver]
+	return qrc.getNumRawDataModules(ver)/8 - eccCodewordsPerBlock[int(ecl)][ver]*numErrorCorrectionBlocks[int(ecl)][ver]
 }

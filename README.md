@@ -14,6 +14,8 @@ func main() {
 	qrGen.Draw(4)
 }
 ```
+#### Result:
+![sample image](sample/qr.png)
 ### Run
 * tests: `make test`
 * demo: `make demo`
