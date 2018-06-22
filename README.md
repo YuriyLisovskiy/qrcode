@@ -15,8 +15,7 @@ func main() {
 }
 ```
 #### Result:
-<img src="sample/qr.png" alt="sample" style="width:1000px;"/>
-
+![sample image](sample/qr.png 250x250)
 ### Run
 * tests: `make test`
 * demo: `make demo`
