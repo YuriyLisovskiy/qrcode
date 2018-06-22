@@ -63,7 +63,7 @@ solaris:
 test:
 	go test ./src/...
 
-run:
+demo:
 	go run demo.go
 
 clean:
