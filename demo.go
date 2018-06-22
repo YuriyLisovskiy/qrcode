@@ -7,7 +7,7 @@ func main() {
 	text := "https://github.com/YuriyLisovskiy/best-friend-telegram-bot"
 //	text := "10"
 
-	qrcode := qr.Generator{}
-	qrcode = qrcode.EncodeText(text)
-	qrcode.Draw(4)
+	qrGenerator := qr.Generator{}
+	qrGenerator = qrGenerator.EncodeText(text)
+	qrGenerator.Draw(4)
 }

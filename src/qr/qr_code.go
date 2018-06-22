@@ -12,14 +12,12 @@ type Generator struct {
 }
 
 func (qrc *Generator) EncodeText(text string) Generator {
-	ecl := eccLOW
 	segments := makeSegments(text)
-	return qrc.encodeSegments(&segments, ecl, 1, 40, -1, true)
+	return qrc.encodeSegments(&segments, eccLOW, 1, 40, -1, true)
 }
 
 func (qrc *Generator) EncodeBinary(data *[]uint8) Generator {
-	ecl := eccLOW
-	return qrc.encodeSegments(&[]qrSegment{makeBytes(data)}, ecl, 1, 40, -1, true)
+	return qrc.encodeSegments(&[]qrSegment{makeBytes(data)}, eccLOW, 1, 40, -1, true)
 }
 
 func (qrc *Generator) Draw(border int) {
@@ -258,31 +256,23 @@ func (qrc *Generator) appendErrorCorrection(data []uint8) []uint8 {
 	shortBlockLen := int(rawCodewords / numBlocks)
 	var blocks [][]uint8
 	rs := newReedSolomonGenerator(blockEccLen)
-	i, k := 0, 0
+	i, start := 0, 0
 	for ; i < numBlocks; i++ {
 		c := 1
 		if i < numShortBlocks {
 			c = 0
 		}
-		dat := []uint8(data[k:(k + shortBlockLen - blockEccLen + c)])	// TODO: in this line data changes
-		k += len(dat)
+		end := start + shortBlockLen - blockEccLen + c
+		dat := make([]uint8, end - start)
+		copy(dat, []uint8(data[start:end]))
+		start += len(dat)
 		ecc := []uint8(rs.GetRemainder(&dat))
 		if i < numShortBlocks {
 			dat = append(dat, 0)
 		}
 		dat = append(dat, ecc...)
-
-	//	for _, d := range dat {
-	//		println(d)						// TODO: remove when fixed
-	//	}
-
 		blocks = append(blocks, dat)
 	}
-
-//	for _, d := range data {
-//		println(d)						// TODO: remove when fixed
-//	}
-//	println("size:", len(data))
 
 	var result []uint8
 	for i := 0; i < len(blocks[0]); i++ {
