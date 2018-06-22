@@ -42,6 +42,9 @@ func (qrc *Generator) Draw(border int) {
 }
 
 func (qrc *Generator) DrawImage(path string, border int) {
+	if border < 0 {
+		panic("border is negative")
+	}
 	size := qrc.getSize() + border*2
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.RGBA{255, 255, 255, 255}}, image.ZP, draw.Src)
