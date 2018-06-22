@@ -59,7 +59,7 @@ func newQrCode(ver int, ecl eccType, dataCodewords []uint8, mask int) Generator 
 		newQrCode.isFunction[i] = make([]bool, newQrCode.size)
 	}
 	newQrCode.drawFunctionPatterns()
-	allCodewords := newQrCode.appendErrorCorrection(&dataCodewords)
+	allCodewords := newQrCode.appendErrorCorrection(dataCodewords)
 	newQrCode.drawCodewords(&allCodewords)
 	newQrCode.mask = newQrCode.handleConstructorMasking(mask)
 	return newQrCode
@@ -243,11 +243,12 @@ func (qrc *Generator) drawAlignmentPattern(x, y int) {
 }
 
 func (qrc *Generator) setFunctionModule(x, y int, isBlack bool) {
-	qrc.modules[y][x], qrc.isFunction[y][x] = isBlack, true
+	qrc.modules[y][x] = isBlack
+	qrc.isFunction[y][x] = true
 }
 
-func (qrc *Generator) appendErrorCorrection(data *[]uint8) []uint8 {
-	if len(*data) != qrc.getNumDataCodewords(qrc.version, qrc.errorCorrectionLevel) {
+func (qrc *Generator) appendErrorCorrection(data []uint8) []uint8 {
+	if len(data) != qrc.getNumDataCodewords(qrc.version, qrc.errorCorrectionLevel) {
 		panic("invalid argument")
 	}
 	numBlocks := int(numErrorCorrectionBlocks[int(qrc.errorCorrectionLevel)][qrc.version])
@@ -263,15 +264,26 @@ func (qrc *Generator) appendErrorCorrection(data *[]uint8) []uint8 {
 		if i < numShortBlocks {
 			c = 0
 		}
-		dat := []uint8((*data)[k:(k + shortBlockLen - blockEccLen + c)])
+		dat := []uint8(data[k:(k + shortBlockLen - blockEccLen + c)])	// TODO: in this line data changes
 		k += len(dat)
 		ecc := []uint8(rs.GetRemainder(&dat))
 		if i < numShortBlocks {
 			dat = append(dat, 0)
 		}
 		dat = append(dat, ecc...)
+
+	//	for _, d := range dat {
+	//		println(d)						// TODO: remove when fixed
+	//	}
+
 		blocks = append(blocks, dat)
 	}
+
+//	for _, d := range data {
+//		println(d)						// TODO: remove when fixed
+//	}
+//	println("size:", len(data))
+
 	var result []uint8
 	for i := 0; i < len(blocks[0]); i++ {
 		for j := 0; j < len(blocks); j++ {
@@ -348,11 +360,11 @@ func (qrc *Generator) applyMask(mask int) {
 
 func (qrc *Generator) handleConstructorMasking(mask int) int {
 	if mask == -1 {
-		minPenalty := maxInt	// TODO: MaxInt32
+		minPenalty := math.MaxInt32	// TODO: MaxInt32
 		for i := 0; i < 8; i++ {
 			qrc.drawFormatBits(i)
 			qrc.applyMask(i)
-			penalty := int(qrc.getPenaltyScore())
+			penalty := qrc.getPenaltyScore()
 			if penalty < minPenalty {
 				mask = i
 				minPenalty = penalty
@@ -368,8 +380,8 @@ func (qrc *Generator) handleConstructorMasking(mask int) int {
 	return mask
 }
 
-func (qrc *Generator) getPenaltyScore() int64 {
-	result := int64(0)
+func (qrc *Generator) getPenaltyScore() int {
+	result := 0
 	for y := 0; y < qrc.size; y++ {
 		colorX := false
 		runX := -1
