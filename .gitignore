@@ -17,3 +17,6 @@
 # Other
 bin/
 *.txt
+*.png
+*.jpeg
+*.jpg
