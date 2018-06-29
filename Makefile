@@ -7,7 +7,7 @@ ARCH64_arm64 = arm64
 
 FLAGS = demo.go
 
-all: clean test linux windows darwin freebsd solaris
+all: test build
 
 build: clean linux windows darwin freebsd solaris
 
