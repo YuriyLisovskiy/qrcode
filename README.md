@@ -11,7 +11,7 @@ import "github.com/YuriyLisovskiy/qrcode/src/qr"
 func main() {
 	qrGen := qr.Generator{}
 	qrGen = qrGen.EncodeText("https://github.com/YuriyLisovskiy")
-	qrGen.Draw(4)
+	qrGen.DrawImage("qr.png", 4)
 }
 ```
 #### Result:
