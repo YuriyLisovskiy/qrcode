@@ -63,6 +63,14 @@ func (qrc *Generator) DrawImage(path string, border int) {
 	png.Encode(file, img)
 }
 
+func drawPixel(x, y, size int, img *image.RGBA, colour color.RGBA) {
+	for i := y; i < size; i++ {
+		for j := x; j < size; j++ {
+			img.Set(i, j, colour)
+		}
+	}
+}
+
 func newQrCode(ver int, ecl eccType, dataCodewords []uint8, mask int) Generator {
 	if ver < minVersion || ver > maxVersion || mask < -1 || mask > 7 {
 		panic("value out of range")

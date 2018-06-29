@@ -6,5 +6,6 @@ func main() {
 	text := "https://github.com/YuriyLisovskiy"
 	qrGenerator := qr.Generator{}
 	qrGenerator = qrGenerator.EncodeText(text)
-	qrGenerator.DrawImage("qr.png", 4)
+//	qrGenerator.DrawImage("qr.png", 4)
+	qrGenerator.Draw(4)
 }
