@@ -7,6 +7,7 @@ import (
 	"image/png"
 	"image/draw"
 	"image/color"
+	"github.com/nfnt/resize"
 )
 
 type Generator struct {
@@ -41,17 +42,20 @@ func (qrc *Generator) Draw(border int) {
 	println()
 }
 
-func (qrc *Generator) DrawImage(path string, border int) {
+func (qrc *Generator) DrawImage(path string, border, pxSize uint) {
 	if border < 0 {
 		panic("border is negative")
 	}
-	size := qrc.getSize() + border*2
+	if pxSize < 1 {
+		panic("pixel size is less than 1")
+	}
+	size := qrc.getSize() + int(border)*2
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.RGBA{255, 255, 255, 255}}, image.ZP, draw.Src)
 	for y := 0; y < size; y++ {
 		for x := 0; x < size; x++ {
 			if qrc.getModule(x, y) {
-				img.Set(x+border, y+border, color.RGBA{0, 0, 0, 255})
+				img.Set(x+int(border), y+int(border), color.RGBA{0, 0, 0, 255})
 			}
 		}
 	}
@@ -60,14 +64,10 @@ func (qrc *Generator) DrawImage(path string, border int) {
 	if err != nil {
 		panic(err)
 	}
-	png.Encode(file, img)
-}
-
-func drawPixel(x, y, size int, img *image.RGBA, colour color.RGBA) {
-	for i := y; i < size; i++ {
-		for j := x; j < size; j++ {
-			img.Set(i, j, colour)
-		}
+	if pxSize > 1 {
+		png.Encode(file, resize.Resize(pxSize*uint(size), pxSize*uint(size), img, resize.NearestNeighbor))
+	} else {
+		png.Encode(file, img)
 	}
 }
 
