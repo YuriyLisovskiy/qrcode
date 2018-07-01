@@ -2,20 +2,22 @@
 [![License](https://img.shields.io/badge/BSD-3--Clause-orange.svg)](LICENSE)
 [![Language](https://img.shields.io/badge/Go-1.10-blue.svg)](https://golang.org/)
 [![Build Status](https://travis-ci.org/YuriyLisovskiy/qrcode.svg?branch=master)](https://travis-ci.org/YuriyLisovskiy/qrcode)
+### Installation
+```
+$ go get github.com/YuriyLisovskiy/qrcode/src/qr
+```
 ### Usage
+Import package with
 ```go
-package main
-
 import "github.com/YuriyLisovskiy/qrcode/src/qr"
-
-func main() {
-	qrGen := qr.Generator{}
-	qrGen = qrGen.EncodeText("https://github.com/YuriyLisovskiy")
-	qrGen.DrawImage("qr.png", 4)
-}
+```
+```go
+qrGen := qr.Generator{}
+qrGen = qrGen.EncodeText("https://github.com/YuriyLisovskiy")
+qrGen.DrawImage("qr.png", 4, 15)
 ```
 #### Result:
-![sample image|512x512](sample/qr.png)
+![sample image](sample/qr.png)
 ### Run
 * tests: `make test`
 * demo: `make demo`
