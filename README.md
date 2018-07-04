@@ -17,7 +17,9 @@ qrGen = qrGen.EncodeText("https://github.com/YuriyLisovskiy")
 qrGen.DrawImage("qr.png", 4, 15)
 ```
 #### Result:
-![sample image](sample/qr.png)
+<p align="center">
+  <a href="https://github.com/YuriyLisovskiy/qrcode/blob/master/sample/qr.png"><img src="sample/qr.png"></a>
+</p>
 ### Run
 * tests: `make test`
 * demo: `make demo`
