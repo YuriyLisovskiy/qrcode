@@ -14,12 +14,13 @@ import "github.com/YuriyLisovskiy/qrcode/src/qr"
 ```go
 qrGen := qr.Generator{}
 qrGen = qrGen.EncodeText("https://github.com/YuriyLisovskiy")
-qrGen.DrawImage("qr.png", 4, 15)
+qrGen.DrawImage("qr.png", 4, 500)
 ```
-#### Result:
+#### Result image:
 <p align="center">
   <a href="https://github.com/YuriyLisovskiy/qrcode/blob/master/sample/qr.png"><img src="sample/qr.png"></a>
 </p>
+
 ### Run
 * tests: `make test`
 * demo: `make demo`
