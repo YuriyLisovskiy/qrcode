@@ -8,6 +8,7 @@ import (
 	"image/draw"
 	"image/color"
 	"github.com/nfnt/resize"
+	"fmt"
 )
 
 type Generator struct {
@@ -28,9 +29,9 @@ func (qrc *Generator) EncodeBinary(data *[]uint8) Generator {
 	return qrc.encodeSegments(&[]qrSegment{makeBytes(data)}, eccLOW, 1, 40, -1, true)
 }
 
-func (qrc *Generator) Draw(border int) {
-	for y := -border; y < qrc.getSize()+border; y++ {
-		for x := -border; x < qrc.getSize()+border; x++ {
+func (qrc *Generator) Draw(margin int) {
+	for y := -margin; y < qrc.getSize()+margin; y++ {
+		for x := -margin; x < qrc.getSize()+margin; x++ {
 			if qrc.getModule(x, y) {
 				print("  ")
 			} else {
@@ -42,20 +43,20 @@ func (qrc *Generator) Draw(border int) {
 	println()
 }
 
-func (qrc *Generator) DrawImage(path string, border, pxSize uint) {
-	if border < 0 {
-		panic("border is negative")
+func (qrc *Generator) DrawImage(path string, margin, pictureSize uint) {
+	if margin < 0 {
+		panic("margin is negative")
 	}
-	if pxSize < 1 {
-		panic("pixel size is less than 1")
+	size := qrc.getSize() + int(margin)*2
+	if int(pictureSize) < size {
+		panic(fmt.Sprintf("size of code is less than minimum size > %dx%d", size, size))
 	}
-	size := qrc.getSize() + int(border)*2
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
 	draw.Draw(img, img.Bounds(), &image.Uniform{color.RGBA{255, 255, 255, 255}}, image.ZP, draw.Src)
 	for y := 0; y < size; y++ {
 		for x := 0; x < size; x++ {
 			if qrc.getModule(x, y) {
-				img.Set(x+int(border), y+int(border), color.RGBA{0, 0, 0, 255})
+				img.Set(x+int(margin), y+int(margin), color.RGBA{0, 0, 0, 255})
 			}
 		}
 	}
@@ -64,8 +65,8 @@ func (qrc *Generator) DrawImage(path string, border, pxSize uint) {
 	if err != nil {
 		panic(err)
 	}
-	if pxSize > 1 {
-		png.Encode(file, resize.Resize(pxSize*uint(size), pxSize*uint(size), img, resize.NearestNeighbor))
+	if int(pictureSize) > size {
+		png.Encode(file, resize.Resize(pictureSize, pictureSize, img, resize.NearestNeighbor))
 	} else {
 		png.Encode(file, img)
 	}
