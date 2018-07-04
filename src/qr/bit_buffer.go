@@ -19,11 +19,8 @@ func (bb bitBuffer) getBytes() []uint8 {
 }
 
 func (bb bitBuffer) AppendBits(val uint32, length int) bitBuffer {
-	if length < 0 || length > 31 {
+	if length < 0 || length > 31 || val>>uint32(length) != 0 {
 		panic("value out of range")
-	}
-	if val>>uint32(length) != 0 {
-		panic("value out of range2")
 	}
 	for i := length - 1; i >= 0; i-- {
 		temp := (val >> uint(i)) & 1

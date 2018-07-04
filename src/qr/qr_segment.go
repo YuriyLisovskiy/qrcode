@@ -43,16 +43,14 @@ func makeNumeric(digits string) qrSegment {
 	return qrSegment{isNUMERIC, charCount, bitBuf}
 }
 
-func makeAlphanumeric(text string) qrSegment { // TODO: not working properly: accumData is incorrect, line 54
+func makeAlphanumeric(text string) qrSegment {
 	bitBuf := bitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
-	println("Text:", text)
 	for _, char := range text {
 		if !strings.ContainsRune(alphanumericCharset, char) {
 			panic("string contains unencodable characters in alphanumeric mode")
 		}
-		accumData = accumData*45 + (int(char) - len(alphanumericCharset))
-		println("accumData:", accumData)
+		accumData = accumData*45 + (len(alphanumericCharset[strings.IndexRune(alphanumericCharset, char):]) - len(alphanumericCharset)) * -1
 		accumCount++
 		if accumCount == 2 {
 			bitBuf = bitBuf.AppendBits(uint32(accumData), 11)
@@ -72,10 +70,8 @@ func makeSegments(text string) []qrSegment {
 
 	} else if isNumeric(text) {
 		result = []qrSegment{makeNumeric(text)}
-//	} else if isAlphanumeric(text) {
-//		println("alphanumeric")
-//		result = []qrSegment{makeAlphanumeric(text)
-// 	}
+	} else if isAlphanumeric(text) {
+		result = []qrSegment{makeAlphanumeric(text)}
 	} else {
 		bytes := []uint8(text)
 		result = []qrSegment{makeBytes(&bytes)}
