@@ -4,12 +4,12 @@
 [![Build Status](https://travis-ci.org/YuriyLisovskiy/qrcode.svg?branch=master)](https://travis-ci.org/YuriyLisovskiy/qrcode)
 ### Installation
 ```
-$ go get github.com/YuriyLisovskiy/qrcode/src/qr
+$ go get github.com/YuriyLisovskiy/qrcode/qr
 ```
 ### Usage
 Import package with
 ```go
-import "github.com/YuriyLisovskiy/qrcode/src/qr"
+import "github.com/YuriyLisovskiy/qrcode/qr"
 ```
 ```go
 qrGen := qr.Generator{}
