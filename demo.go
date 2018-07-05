@@ -1,6 +1,6 @@
 package main
 
-import "github.com/YuriyLisovskiy/qrcode/src/qr"
+import "github.com/YuriyLisovskiy/qrcode/qr"
 
 func main() {
 	text := "https://github.com/YuriyLisovskiy"
