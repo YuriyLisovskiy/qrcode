@@ -23,9 +23,9 @@ func (bb bitBuffer) getBytes() []uint8 {
 
 // Appends the given number of low bits of the given value
 // to this sequence. Requires 0 <= val < 2^len.
-func (bb bitBuffer) AppendBits(val uint32, length int) bitBuffer {
+func (bb bitBuffer) appendBits(val uint32, length int) bitBuffer {
 	if length < 0 || length > 31 || val>>uint32(length) != 0 {
-		panic("value out of range")
+		panic("package qr: bitBuffer.appendBits: value out of range")
 	}
 	for i := length - 1; i >= 0; i-- {
 		temp := (val >> uint(i)) & 1

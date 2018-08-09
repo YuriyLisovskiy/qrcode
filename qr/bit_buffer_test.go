@@ -4,8 +4,7 @@ import (
 	"testing"
 	)
 
-var (
-	AppendBits_TestData = []struct {
+var	appendBits_TestData = []struct {
 		inputVal []uint32
 		inputLen []int
 		expected bitBuffer
@@ -43,24 +42,23 @@ var (
 			},
 		},
 	}
-)
 
 func Test_AppendBits(test *testing.T) {
 	actual := bitBuffer{}
-	for _, data := range AppendBits_TestData {
+	for _, data := range appendBits_TestData {
 		for i := range data.inputVal {
-			actual = actual.AppendBits(data.inputVal[i], data.inputLen[i])
+			actual = actual.appendBits(data.inputVal[i], data.inputLen[i])
 		}
 		if len(actual) != len(data.expected) {
 			test.Errorf(
-				"qr.Test_AppendBits: actual bitBuffer len -> %d is not equal to expected bitBuffer len -> %d",
+				"bit_buffer.Test_AppendBits:\n\tactual bitBuffer len -> %d\nis not equal to\n\texpected bitBuffer len -> %d",
 				len(actual), len(data.expected),
 			)
 		}
 		for i, bit := range actual {
 			if bit != data.expected[i] {
 				test.Errorf(
-					"qr.Test_AppendBits: actual bit of bitBuffer-> %t is not equal to expected bit of bitBuffer -> %t",
+					"bit_buffer.Test_AppendBits:\n\tactual bit of bitBuffer-> %t\n is not equal to\n\texpected bit of bitBuffer -> %t",
 					bit, data.expected[i],
 				)
 			}
@@ -68,8 +66,7 @@ func Test_AppendBits(test *testing.T) {
 	}
 }
 
-var (
-	getBytes_TestData = []struct {
+var	getBytes_TestData = []struct {
 		inputVal []uint32
 		inputLen []int
 		expected []uint8
@@ -90,25 +87,24 @@ var (
 			expected: []uint8{72, 12, 0, 0, 160, 0, 240, 39, 240, 0},
 		},
 	}
-)
 
 func Test_getBytes(test *testing.T) {
 	bitBuf := bitBuffer{}
 	for _, data := range getBytes_TestData {
 		for i := range data.inputVal {
-			bitBuf = bitBuf.AppendBits(data.inputVal[i], data.inputLen[i])
+			bitBuf = bitBuf.appendBits(data.inputVal[i], data.inputLen[i])
 		}
 		actual := bitBuf.getBytes()
 		if len(actual) != len(data.expected) {
 			test.Errorf(
-				"qr.Test_getBytes: actual uint8 array len -> %d is not equal to expected uint8 array len -> %d",
+				"bit_buffer.Test_getBytes:\n\tactual uint8 array len -> %d\n is not equal to\n\texpected uint8 array len -> %d",
 				len(bitBuf), len(data.expected),
 			)
 		}
 		for i, bit := range actual {
 			if bit != data.expected[i] {
 				test.Errorf(
-					"qr.Test_getBytes: actual bit of bitBuffer-> %d is not equal to expected bit of bitBuffer -> %d",
+					"bit_buffer.Test_getBytes:\n\tactual bit of bitBuffer-> %d\n is not equal to\n\texpected bit of bitBuffer -> %d",
 					bit, data.expected[i],
 				)
 			}

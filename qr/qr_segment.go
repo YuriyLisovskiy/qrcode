@@ -25,11 +25,11 @@ type qrSegment struct {
 // Returns a segment representing the given binary data encoded in byte mode.
 func makeBytes(data *[]uint8) qrSegment {
 	if len(*data) > math.MaxInt32 {
-		panic("data too long")
+		panic(qrSegmentErr("makeBytes", "data too long"))
 	}
 	bitBuf := bitBuffer{}
 	for _, bit := range *data {
-		bitBuf = bitBuf.AppendBits(uint32(bit), 8)
+		bitBuf = bitBuf.appendBits(uint32(bit), 8)
 	}
 	return qrSegment{isBYTE, len(*data), bitBuf}
 }
@@ -40,18 +40,18 @@ func makeNumeric(digits string) qrSegment {
 	accumData, accumCount, charCount := 0, 0, 0
 	for _, digit := range digits {
 		if digit < '0' || digit > '9' {
-			panic("string contains non-numeric characters")
+			panic(qrSegmentErr("makeNumeric", "string contains non-numeric characters"))
 		}
 		accumData = accumData*10 + (int(digit) - '0')
 		accumCount++
 		if accumCount == 3 {
-			bitBuf = bitBuf.AppendBits(uint32(accumData), 10)
+			bitBuf = bitBuf.appendBits(uint32(accumData), 10)
 			accumData, accumCount = 0, 0
 		}
 		charCount++
 	}
 	if accumCount > 0 {
-		bitBuf = bitBuf.AppendBits(uint32(accumData), accumCount*3+1)
+		bitBuf = bitBuf.appendBits(uint32(accumData), accumCount*3+1)
 	}
 	return qrSegment{isNUMERIC, charCount, bitBuf}
 }
@@ -65,18 +65,18 @@ func makeAlphanumeric(text string) qrSegment {
 	accumData, accumCount, charCount := 0, 0, 0
 	for _, char := range text {
 		if !strings.ContainsRune(alphanumericCharset, char) {
-			panic("string contains unencodable characters in alphanumeric mode")
+			panic(qrSegmentErr("makeAlphanumeric", "string contains unencodable characters in alphanumeric mode"))
 		}
 		accumData = accumData*45 + (len(alphanumericCharset[strings.IndexRune(alphanumericCharset, char):])-len(alphanumericCharset))*-1
 		accumCount++
 		if accumCount == 2 {
-			bitBuf = bitBuf.AppendBits(uint32(accumData), 11)
+			bitBuf = bitBuf.appendBits(uint32(accumData), 11)
 			accumData, accumCount = 0, 0
 		}
 		charCount++
 	}
 	if accumCount > 0 {
-		bitBuf = bitBuf.AppendBits(uint32(accumData), 6)
+		bitBuf = bitBuf.appendBits(uint32(accumData), 6)
 	}
 	return qrSegment{isALPHANUMERIC, charCount, bitBuf}
 }
@@ -104,15 +104,15 @@ func makeSegments(text string) []qrSegment {
 func (qrs qrSegment) makeEci(assignVal int64) qrSegment {
 	bitBuf := bitBuffer{}
 	if 0 <= assignVal && assignVal < (1<<7) {
-		bitBuf = bitBuf.AppendBits(uint32(assignVal), 8)
+		bitBuf = bitBuf.appendBits(uint32(assignVal), 8)
 	} else if (1<<7) <= assignVal && assignVal < (1<<14) {
-		bitBuf = bitBuf.AppendBits(2, 2)
-		bitBuf = bitBuf.AppendBits(uint32(assignVal), 14)
+		bitBuf = bitBuf.appendBits(2, 2)
+		bitBuf = bitBuf.appendBits(uint32(assignVal), 14)
 	} else if (1<<14) <= assignVal && assignVal < 1000000 {
-		bitBuf = bitBuf.AppendBits(6, 3)
-		bitBuf = bitBuf.AppendBits(uint32(assignVal), 21)
+		bitBuf = bitBuf.appendBits(6, 3)
+		bitBuf = bitBuf.appendBits(uint32(assignVal), 21)
 	} else {
-		panic("ECI assignment value out of range")
+		panic(qrSegmentErr("makeEci", "ECI assignment value out of range"))
 	}
 	return qrSegment{isECI, 0, bitBuf}
 }
@@ -120,11 +120,11 @@ func (qrs qrSegment) makeEci(assignVal int64) qrSegment {
 // Helper function.
 func getTotalBits(segs *[]qrSegment, version int) int {
 	if version < 1 || version > 40 {
-		panic("version number out of range")
+		panic(qrSegmentErr("getTotalBits", "version number out of range"))
 	}
 	result := 0
 	for _, seg := range *segs {
-		ccbits := seg.Mode.NumCharCountBits(version)
+		ccbits := seg.Mode.numCharCountBits(version)
 		if uint(seg.NumChars) >= (uint(1) << uint(ccbits)) {
 			return -1
 		}

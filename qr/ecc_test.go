@@ -27,7 +27,7 @@ var EccType_TestData = []struct{
 func Test_EccType(test *testing.T) {
 	for _, data := range EccType_TestData {
 		if data.actual != data.expected {
-			test.Errorf("qr.Test_EccType: actual -> %d is not equal to expected -> %d", data.actual, data.expected)
+			test.Errorf("ecc.Test_EccType:\n\tactual -> %d\n is not equal to\n\texpected -> %d", data.actual, data.expected)
 		}
 	}
 }
