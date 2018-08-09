@@ -1,9 +1,16 @@
 package qr
 
+// Computes the Reed-Solomon error correction codewords for a sequence of data codewords
+// at a given degree. Objects are immutable, and the state only depends on the degree.
+// This class exists because each data block in a QR Code shares the same the divisor polynomial.
 type reedSolomonGenerator struct {
+	// Coefficients of the divisor polynomial, stored from highest to lowest power, excluding the leading term which
+	// is always 1. For example the polynomial x^3 + 255x^2 + 8x + 93 is stored as the uint8 array {255, 8, 93}.
 	Coefficients []uint8
 }
 
+// Creates a Reed-Solomon ECC generator for the given degree. This could be implemented
+// as a lookup table over all possible parameter values, instead of as an algorithm.
 func newReedSolomonGenerator(degree int) reedSolomonGenerator {
 	newRSG := reedSolomonGenerator{}
 	if degree < 1 || degree > 255 {
@@ -24,6 +31,9 @@ func newReedSolomonGenerator(degree int) reedSolomonGenerator {
 	return newRSG
 }
 
+// Computes and returns the Reed-Solomon error correction codewords for the given
+// sequence of data codewords. The returned object is always a new byte array.
+// This method does not alter this object's state (because it is immutable).
 func (rsg reedSolomonGenerator) GetRemainder(data *[]uint8) []uint8 {
 	result := make([]uint8, len(rsg.Coefficients))
 	for _, b := range *data {
@@ -37,11 +47,14 @@ func (rsg reedSolomonGenerator) GetRemainder(data *[]uint8) []uint8 {
 	return result
 }
 
+// Returns the product of the two given field elements modulo GF(2^8/0x11D).
+//
+// All inputs are valid. This could be implemented as a 256*256 lookup table.
 func (rsg reedSolomonGenerator) multiply(x, y uint8) uint8 {
 	z := 0
 	for i := 7; i >= 0; i-- {
 		z = (z << 1) ^ ((z >> 7) * 0x11D)
-		z = int(uint8(z) ^ ((y >> uint8(i)) & 1) * x)
+		z = int(uint8(z) ^ ((y>>uint8(i))&1)*x)
 	}
 	if z>>8 != 0 {
 		panic("assertion error")

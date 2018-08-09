@@ -1,6 +1,7 @@
 package qr
 
 const (
+	// The set of all legal characters in alphanumeric mode, where each character value maps to the index in the string.
 	alphanumericCharset = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:"
 
 	maxInt = int(^uint(0) >> 1)
@@ -8,6 +9,7 @@ const (
 	minVersion = 1
 	maxVersion = 40
 
+	// For use in getPenaltyScore(), when evaluating which mask is best.
 	penaltyN1 = 3
 	penaltyN2 = 3
 	penaltyN3 = 40

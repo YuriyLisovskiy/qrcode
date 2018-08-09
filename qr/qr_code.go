@@ -2,33 +2,64 @@ package qr
 
 import (
 	"os"
+	"fmt"
 	"math"
 	"image"
 	"image/png"
 	"image/draw"
 	"image/color"
+
 	"github.com/nfnt/resize"
-	"fmt"
 )
 
+// Represents an immutable square grid of black and white cells for a QR Code symbol, and
+// provides static functions to create a QR Code from user-supplied textual or binary data.
+// This class covers the QR Code model 2 specification, supporting all versions (sizes)
+// from 1 to 40, all 4 error correction levels, and only 3 character encoding modes.
 type Generator struct {
-	version              int
-	size                 int
+	// This QR Code symbol's version number, which is always between 1 and 40 (inclusive).
+	version int
+
+	// The width and height of this QR Code symbol, measured in modules.
+	// Always equal to version &times; 4 + 17, in the range 21 to 177.
+	size int
+
+	// The error correction level used in this QR Code symbol.
 	errorCorrectionLevel eccType
-	mask                 int
-	modules              [][]bool
-	isFunction           [][]bool
+
+	// The mask pattern used in this QR Code symbol, in the range 0 to 7 (i.e. unsigned 3-bit integer).
+	// Note that even if a constructor was called with automatic masking requested
+	// (mask = -1), the resulting object will still have a mask value between 0 and 7.
+	mask int
+
+	// The modules of this QR Code symbol (false = white, true = black)
+	modules [][]bool
+
+	// Indicates function modules that are not subjected to masking
+	isFunction [][]bool
 }
 
+// Returns a QR Code symbol representing the specified Unicode text string at the specified error correction level.
+//
+// As a conservative upper bound, this function is guaranteed to succeed for strings that have 2953 or fewer
+// UTF-8 code units (not Unicode code points) if the low error correction level is used. The smallest possible
+// QR Code version is automatically chosen for the output. The ECC level of the result may be higher than
+// the ecl argument if it can be done without increasing the version.
 func (qrc *Generator) EncodeText(text string) Generator {
 	segments := makeSegments(text)
 	return qrc.encodeSegments(&segments, eccLOW, 1, 40, -1, true)
 }
 
+// Returns a QR Code symbol representing the given binary data string at the given error correction level.
+//
+// This function always encodes using the binary segment mode, not any text mode. The maximum number of
+// bytes allowed is 2953. The smallest possible QR Code version is automatically chosen for the output.
+// The ECC level of the result may be higher than the ecl argument if it can be done without increasing the version.
 func (qrc *Generator) EncodeBinary(data *[]uint8) Generator {
 	return qrc.encodeSegments(&[]qrSegment{makeBytes(data)}, eccLOW, 1, 40, -1, true)
 }
 
+// Draws generated QR Code to the terminal window.
 func (qrc *Generator) Draw(margin int) {
 	for y := -margin; y < qrc.getSize()+margin; y++ {
 		for x := -margin; x < qrc.getSize()+margin; x++ {
@@ -43,6 +74,7 @@ func (qrc *Generator) Draw(margin int) {
 	println()
 }
 
+// Draws generated QR Code and save it to a file.
 func (qrc *Generator) DrawImage(path string, margin, pictureSize uint) {
 	if margin < 0 {
 		panic("margin is negative")
@@ -52,11 +84,11 @@ func (qrc *Generator) DrawImage(path string, margin, pictureSize uint) {
 		panic(fmt.Sprintf("size of code is less than minimum size > %dx%d", size, size))
 	}
 	img := image.NewRGBA(image.Rect(0, 0, size, size))
-	draw.Draw(img, img.Bounds(), &image.Uniform{color.RGBA{255, 255, 255, 255}}, image.ZP, draw.Src)
+	draw.Draw(img, img.Bounds(), &image.Uniform{C: color.RGBA{R: 255, G: 255, B: 255, A: 255}}, image.ZP, draw.Src)
 	for y := 0; y < size; y++ {
 		for x := 0; x < size; x++ {
 			if qrc.getModule(x, y) {
-				img.Set(x+int(margin), y+int(margin), color.RGBA{0, 0, 0, 255})
+				img.Set(x+int(margin), y+int(margin), color.RGBA{R: 0, G: 0, B: 0, A: 255})
 			}
 		}
 	}
@@ -72,6 +104,9 @@ func (qrc *Generator) DrawImage(path string, margin, pictureSize uint) {
 	}
 }
 
+// Creates a new QR Code symbol with the given version number, error correction level, binary data array,
+// and mask number. This is a cumbersome low-level constructor that should not be invoked directly by the user.
+// To go one level up, see the encodeSegments() function.
 func newQrCode(ver int, ecl eccType, dataCodewords []uint8, mask int) Generator {
 	if ver < minVersion || ver > maxVersion || mask < -1 || mask > 7 {
 		panic("value out of range")
@@ -97,6 +132,7 @@ func newQrCode(ver int, ecl eccType, dataCodewords []uint8, mask int) Generator 
 	return newQrCode
 }
 
+// Returns a value in the range 0 to 3 (unsigned 2-bit integer).
 func (qrc *Generator) getFormatBits(ecl eccType) int {
 	switch ecl {
 	case eccLOW:
@@ -112,6 +148,12 @@ func (qrc *Generator) getFormatBits(ecl eccType) int {
 	}
 }
 
+// Returns a QR Code symbol representing the given data segments with the given encoding parameters.
+//
+// The smallest possible QR Code version within the given range is automatically chosen for the output.
+// This function allows the user to create a custom sequence of segments that switches
+// between modes (such as alphanumeric and binary) to encode text more efficiently.
+// This function is considered to be lower level than simply encoding text or binary data.
 func (qrc *Generator) encodeSegments(segs *[]qrSegment, ecl eccType, minVersion, maxVersion, mask int, boostEcl bool) Generator {
 	if !(minVersion <= minVersion && minVersion <= maxVersion && maxVersion <= maxVersion) || mask < -1 || mask > 7 {
 		panic("invalid value")
@@ -153,34 +195,55 @@ func (qrc *Generator) encodeSegments(segs *[]qrSegment, ecl eccType, minVersion,
 	return newQrCode(version, ecl, bitBuf.getBytes(), mask)
 }
 
+// Instance method.
+//
+// Returns QR Code generator's version.
 func (qrc *Generator) getVersion() int {
 	return qrc.version
 }
 
+// Instance method.
+//
+// Returns the size of QR Code.
 func (qrc *Generator) getSize() int {
 	return qrc.size
 }
 
+// Instance method.
+//
+// Returns an error correction level of QR Code.
 func (qrc *Generator) getErrorCorrectionLevel() eccType {
 	return qrc.errorCorrectionLevel
 }
 
+// Instance method.
+//
+// Returns QR Code generator's mask.
 func (qrc *Generator) getMask() int {
 	return qrc.mask
 }
 
+// Returns the color of the module (pixel) at the given coordinates, which is either
+// false for white or true for black. The top left corner has the coordinates (x=0, y=0).
+//
+// If the given coordinates are out of bounds, then false (white) is returned.
 func (qrc *Generator) getModule(x, y int) bool {
 	return 0 <= x && x < qrc.size && 0 <= y && y < qrc.size && qrc.module(x, y)
 }
 
+// Returns the color of the module at the given coordinates, which must be in range.
 func (qrc *Generator) module(x, y int) bool {
 	return qrc.modules[y][x]
 }
 
+// Returns true iff the i'th bit of x is set to 1.
 func (qrc *Generator) getBit(x int, i uint) bool {
 	return ((x >> i) & 1) != 0
 }
 
+// Draws function patterns.
+//
+// Helper method for constructor: drawing function modules.
 func (qrc *Generator) drawFunctionPatterns() {
 	for i := 0; i < qrc.size; i++ {
 		qrc.setFunctionModule(6, i, i%2 == 0)
@@ -205,6 +268,10 @@ func (qrc *Generator) drawFunctionPatterns() {
 	qrc.drawVersion()
 }
 
+// Draws two copies of the format bits (with its own error correction code)
+// based on the given mask and this object's error correction level field.
+//
+// Helper method for constructor: drawing function modules.
 func (qrc *Generator) drawFormatBits(mask int) {
 	data := int(qrc.getFormatBits(qrc.errorCorrectionLevel)<<3 | mask)
 	rem := int(data)
@@ -234,6 +301,10 @@ func (qrc *Generator) drawFormatBits(mask int) {
 	qrc.setFunctionModule(8, qrc.size-8, true)
 }
 
+// Draws two copies of the version bits (with its own error correction code),
+// based on this object's version field (which only has an effect for 7 <= version <= 40).
+//
+// Helper method for constructor: drawing function modules.
 func (qrc *Generator) drawVersion() {
 	if qrc.version < 7 {
 		return
@@ -254,6 +325,9 @@ func (qrc *Generator) drawVersion() {
 	}
 }
 
+// Draws a 9*9 finder pattern including the border separator, with the center module at (x, y).
+//
+// Helper method for constructor: drawing function modules.
 func (qrc *Generator) drawFinderPattern(x, y int) {
 	for i := -4; i <= 4; i++ {
 		for j := -4; j <= 4; j++ {
@@ -266,6 +340,9 @@ func (qrc *Generator) drawFinderPattern(x, y int) {
 	}
 }
 
+// Draws a 5*5 alignment pattern, with the center module at (x, y).
+//
+// Helper method for constructor: drawing function modules.
 func (qrc *Generator) drawAlignmentPattern(x, y int) {
 	for i := -2; i <= 2; i++ {
 		for j := -2; j <= 2; j++ {
@@ -274,11 +351,19 @@ func (qrc *Generator) drawAlignmentPattern(x, y int) {
 	}
 }
 
+// Sets the color of a module and marks it as a function module.
+// Only used by the constructor. Coordinates must be in range.
+//
+// Helper method for constructor: drawing function modules.
 func (qrc *Generator) setFunctionModule(x, y int, isBlack bool) {
 	qrc.modules[y][x] = isBlack
 	qrc.isFunction[y][x] = true
 }
 
+// Returns a new byte string representing the given data with the appropriate error correction
+// codewords appended to it, based on this object's version and error correction level.
+//
+// Helper method for constructor: codewords and masking.
 func (qrc *Generator) appendErrorCorrection(data []uint8) []uint8 {
 	if len(data) != qrc.getNumDataCodewords(qrc.version, qrc.errorCorrectionLevel) {
 		panic("invalid argument")
@@ -322,6 +407,10 @@ func (qrc *Generator) appendErrorCorrection(data []uint8) []uint8 {
 	return result
 }
 
+// Draws the given sequence of 8-bit codewords (data and error correction) onto the entire
+// data area of this QR Code symbol. Function modules need to be marked off before this is called.
+//
+// Helper method for constructor: codewords and masking.
 func (qrc *Generator) drawCodewords(data *[]uint8) {
 	if len(*data) != qrc.getNumRawDataModules(qrc.version)/8 {
 		panic("invalid argument")
@@ -350,6 +439,12 @@ func (qrc *Generator) drawCodewords(data *[]uint8) {
 	}
 }
 
+// XORs the data modules in this QR Code with the given mask pattern. Due to XOR's mathematical
+// properties, calling applyMask(m) twice with the same value is equivalent to no change at all.
+// This means it is possible to apply a mask, undo it, and try another mask. Note that a final
+// well-formed QR Code symbol needs exactly one mask applied (not zero, not two, etc.).
+//
+// Helper method for constructor: codewords and masking.
 func (qrc *Generator) applyMask(mask int) {
 	if mask < 0 || mask > 7 {
 		panic("mask value out of range")
@@ -382,6 +477,11 @@ func (qrc *Generator) applyMask(mask int) {
 	}
 }
 
+// A messy helper function for the constructors. This QR Code must be in an unmasked state when this
+// method is called. The given argument is the requested mask, which is -1 for auto or 0 to 7 for fixed.
+// This method applies and returns the actual mask chosen, from 0 to 7.
+//
+// Helper method for constructor: codewords and masking.
 func (qrc *Generator) handleConstructorMasking(mask int) int {
 	if mask == -1 {
 		minPenalty := math.MaxInt32
@@ -404,6 +504,10 @@ func (qrc *Generator) handleConstructorMasking(mask int) int {
 	return mask
 }
 
+// Calculates and returns the penalty score based on state of this QR Code's current modules.
+// This is used by the automatic mask choice algorithm to find the mask pattern that yields the lowest score.
+//
+// Helper method for constructor: codewords and masking.
 func (qrc *Generator) getPenaltyScore() int {
 	result := 0
 	for y := 0; y < qrc.size; y++ {
@@ -489,6 +593,11 @@ func (qrc *Generator) getPenaltyScore() int {
 	return result
 }
 
+// Returns a set of positions of the alignment patterns in ascending order. These positions are
+// used on both the x and y axes. Each value in the resulting array is in the range [0, 177).
+// This stateless pure function could be implemented as table of 40 variable-length lists of unsigned bytes.
+//
+// Helper function.
 func (qrc *Generator) getAlignmentPatternPositions(ver int) []int {
 	if ver < minVersion || ver > maxVersion {
 		panic("Version number out of range")
@@ -513,6 +622,11 @@ func (qrc *Generator) getAlignmentPatternPositions(ver int) []int {
 	}
 }
 
+// Returns the number of data bits that can be stored in a QR Code of the given version number, after
+// all function modules are excluded. This includes remainder bits, so it might not be a multiple of 8.
+// The result is in the range [208, 29648]. This could be implemented as a 40-entry lookup table.
+//
+// Helper function.
 func (qrc *Generator) getNumRawDataModules(ver int) int {
 	if ver < minVersion || ver > maxVersion {
 		panic("version number out of range")
@@ -528,6 +642,11 @@ func (qrc *Generator) getNumRawDataModules(ver int) int {
 	return result
 }
 
+// Returns the number of 8-bit data (i.e. not error correction) codewords contained in any
+// QR Code of the given version number and error correction level, with remainder bits discarded.
+// This stateless pure function could be implemented as a (40*4)-cell lookup table.
+//
+// Helper function.
 func (qrc *Generator) getNumDataCodewords(ver int, ecl eccType) int {
 	if ver < minVersion || ver > maxVersion {
 		panic("version number out of range")

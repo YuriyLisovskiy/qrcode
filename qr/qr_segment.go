@@ -5,12 +5,24 @@ import (
 	"strings"
 )
 
+// Represents a character string to be encoded in a QR Code symbol. Each segment has
+// a mode, and a sequence of characters that is already encoded as a sequence of bits.
+// Instances of this class are immutable.
+// This segment class imposes no length restrictions, but QR Codes have restrictions.
+// Even in the most favorable conditions, a QR Code can only hold 7089 characters of data.
+// Any segment longer than this is meaningless for the purpose of generating QR Codes.
 type qrSegment struct {
-	Mode     modeType
+	// The mode indicator for this segment.
+	Mode modeType
+
+	// The length of this segment's unencoded data, measured in characters. Always zero or positive.
 	NumChars int
-	Data     []bool
+
+	// The data bits of this segment.
+	Data []bool
 }
 
+// Returns a segment representing the given binary data encoded in byte mode.
 func makeBytes(data *[]uint8) qrSegment {
 	if len(*data) > math.MaxInt32 {
 		panic("data too long")
@@ -22,6 +34,7 @@ func makeBytes(data *[]uint8) qrSegment {
 	return qrSegment{isBYTE, len(*data), bitBuf}
 }
 
+// Returns a segment representing the given string of decimal digits encoded in numeric mode.
 func makeNumeric(digits string) qrSegment {
 	bitBuf := bitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
@@ -43,6 +56,10 @@ func makeNumeric(digits string) qrSegment {
 	return qrSegment{isNUMERIC, charCount, bitBuf}
 }
 
+// Returns a segment representing the given text string encoded in alphanumeric mode.
+//
+// The characters allowed are: 0 to 9, A to Z (uppercase only), space,
+// dollar, percent, asterisk, plus, hyphen, period, slash, colon.
 func makeAlphanumeric(text string) qrSegment {
 	bitBuf := bitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
@@ -50,7 +67,7 @@ func makeAlphanumeric(text string) qrSegment {
 		if !strings.ContainsRune(alphanumericCharset, char) {
 			panic("string contains unencodable characters in alphanumeric mode")
 		}
-		accumData = accumData*45 + (len(alphanumericCharset[strings.IndexRune(alphanumericCharset, char):]) - len(alphanumericCharset)) * -1
+		accumData = accumData*45 + (len(alphanumericCharset[strings.IndexRune(alphanumericCharset, char):])-len(alphanumericCharset))*-1
 		accumCount++
 		if accumCount == 2 {
 			bitBuf = bitBuf.AppendBits(uint32(accumData), 11)
@@ -64,6 +81,9 @@ func makeAlphanumeric(text string) qrSegment {
 	return qrSegment{isALPHANUMERIC, charCount, bitBuf}
 }
 
+// Returns a list of zero or more segments to represent the given text string.
+//
+// The result may use various segment modes and switch modes to optimize the length of the bit stream.
 func makeSegments(text string) []qrSegment {
 	var result []qrSegment
 	if text == "" {
@@ -79,6 +99,8 @@ func makeSegments(text string) []qrSegment {
 	return result
 }
 
+// Returns a segment representing an Extended Channel Interpretation
+// (ECI) designator with the given assignment value.
 func (qrs qrSegment) makeEci(assignVal int64) qrSegment {
 	bitBuf := bitBuffer{}
 	if 0 <= assignVal && assignVal < (1<<7) {
@@ -95,6 +117,7 @@ func (qrs qrSegment) makeEci(assignVal int64) qrSegment {
 	return qrSegment{isECI, 0, bitBuf}
 }
 
+// Helper function.
 func getTotalBits(segs *[]qrSegment, version int) int {
 	if version < 1 || version > 40 {
 		panic("version number out of range")
@@ -117,6 +140,7 @@ func getTotalBits(segs *[]qrSegment, version int) int {
 	return result
 }
 
+// Tests whether the given string can be encoded as a segment in alphanumeric mode.
 func isAlphanumeric(text string) bool {
 	for _, char := range text {
 		if !strings.ContainsRune(alphanumericCharset, char) {
@@ -126,6 +150,7 @@ func isAlphanumeric(text string) bool {
 	return true
 }
 
+// Tests whether the given string can be encoded as a segment in numeric mode.
 func isNumeric(text string) bool {
 	for _, char := range text {
 		if char < '0' || char > '9' {
@@ -135,14 +160,17 @@ func isNumeric(text string) bool {
 	return true
 }
 
+// Returns qr segment's mode.
 func (qrs qrSegment) getMode() modeType {
 	return qrs.Mode
 }
 
+// Returns qr segment's num chars.
 func (qrs qrSegment) getNumChars() int {
 	return qrs.NumChars
 }
 
+// Returns an address of qr segment's data.
 func (qrs qrSegment) getData() *[]bool {
 	return &qrs.Data
 }
