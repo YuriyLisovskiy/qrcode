@@ -49,7 +49,7 @@ func Test_AppendBits(test *testing.T) {
 	actual := bitBuffer{}
 	for _, data := range AppendBits_TestData {
 		for i := range data.inputVal {
-			actual, _ = actual.AppendBits(data.inputVal[i], data.inputLen[i])
+			actual = actual.AppendBits(data.inputVal[i], data.inputLen[i])
 		}
 		if len(actual) != len(data.expected) {
 			test.Errorf(
@@ -96,7 +96,7 @@ func Test_getBytes(test *testing.T) {
 	bitBuf := bitBuffer{}
 	for _, data := range getBytes_TestData {
 		for i := range data.inputVal {
-			bitBuf, _ = bitBuf.AppendBits(data.inputVal[i], data.inputLen[i])
+			bitBuf = bitBuf.AppendBits(data.inputVal[i], data.inputLen[i])
 		}
 		actual := bitBuf.getBytes()
 		if len(actual) != len(data.expected) {
