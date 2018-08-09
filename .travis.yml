@@ -1,9 +1,24 @@
 language: go
+
+sudo: false
+
 go:
-  - 1.x
+- 1.x
+
 notifications:
   email: false
+
+env:
+- "PATH=/home/travis/gopath/bin:$PATH"
+
 before_script:
-  - go get ./...
+- echo $PATH
+- echo $GOPATH
+- go version
+- go env
+- go get -v -t ./qr/...
+- go get github.com/mattn/goveralls
+
 script:
-  - make test
+- make test
+- goveralls -coverprofile=coverage.out -service travis-ci
