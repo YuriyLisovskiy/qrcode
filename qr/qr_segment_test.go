@@ -4,9 +4,7 @@
 
 package qr
 
-import (
-	"testing"
-	)
+import "testing"
 
 var makeBytes_TestData = []struct {
 	input    []uint8
@@ -392,6 +390,453 @@ func Test_makeSegments(test *testing.T) {
 				test.Errorf(
 					"qr_segment.Test_makeSegments:\n\tactual Data -> %t\n is not equal to\n\texpected Data -> %t",
 					d, data.expected[0].Data[i],
+				)
+			}
+		}
+	}
+}
+
+var makeEci_TestData = []struct {
+	input    int64
+	expected qrSegment
+}{
+	{
+		input: 456789,
+		expected: qrSegment{
+			Mode: modeType{
+				modeBits:         7,
+				numBitsCharCount: [3]int{0, 0, 0},
+			},
+			NumChars: 0,
+			Data: []bool{
+				true, true, false, false, false, true, true, false, true, true, true, true, true, false, false, false,
+				false, true, false, true, false, true, false, true,
+			},
+		},
+	},
+	{
+		input: 453254,
+		expected: qrSegment{
+			Mode: modeType{
+				modeBits:         7,
+				numBitsCharCount: [3]int{0, 0, 0},
+			},
+			NumChars: 0,
+			Data: []bool{
+				true, true, false, false, false, true, true, false, true, true, true, false, true, false, true, false,
+				true, false, false, false, false, true, true, false,
+			},
+		},
+	},
+	{
+		input: 345789,
+		expected: qrSegment{
+			Mode: modeType{
+				modeBits:         7,
+				numBitsCharCount: [3]int{0, 0, 0},
+			},
+			NumChars: 0,
+			Data: []bool{
+				true, true, false, false, false, true, false, true, false, true, false, false, false, true, true, false,
+				true, false, true, true, true, true, false, true,
+			},
+		},
+	},
+}
+
+func Test_makeEci(test *testing.T) {
+	for _, data := range makeEci_TestData {
+		actual := makeEci(data.input)
+		if actual.NumChars != data.expected.NumChars {
+			test.Errorf(
+				"qr_segment.Test_makeEci:\n\tactual numChars -> %d\n is not equal to\n\texpected numChars -> %d",
+				actual.NumChars, data.expected.NumChars,
+			)
+		}
+		if actual.Mode.modeBits != data.expected.Mode.modeBits {
+			test.Errorf(
+				"qr_segment.Test_makeEci:\n\tactual Mode -> %d\n is not equal to\n\texpected Mode -> %d",
+				actual.Mode.modeBits, data.expected.Mode.modeBits,
+			)
+		}
+		for i, d := range actual.Mode.numBitsCharCount {
+			if d != data.expected.Mode.numBitsCharCount[i] {
+				test.Errorf(
+					"qr_segment.Test_makeEci:\n\tactual Mode -> %d\n is not equal to\n\texpected Mode -> %d",
+					d, data.expected.Mode.numBitsCharCount[i],
+				)
+			}
+		}
+		for i, d := range actual.Data {
+			if d != data.expected.Data[i] {
+				test.Errorf(
+					"qr_segment.Test_makeEci:\n\tactual Data -> %t\n is not equal to\n\texpected Data -> %t",
+					d, data.expected.Data[i],
+				)
+			}
+		}
+	}
+}
+
+var getTotalBits_TestData = []struct {
+	inputSeg []qrSegment
+	inputVer int
+	expected int
+}{
+	{
+		inputSeg: []qrSegment{
+			{
+				Mode: modeType{
+					modeBits:         2,
+					numBitsCharCount: [3]int{9, 11, 13},
+				},
+				NumChars: 17,
+				Data: []bool{
+					true, false, true, false, false, false, false, false, true, false, false, false, true, true, true, true,
+					true, false, true, true, false, false, true, true, false, false, true, false, true, true, true, true,
+					false, true, false, false, false, false, true, false, false, false, true, true, true, false, true, false,
+					false, true, false, true, false, true, false, false, true, false, true, false, false, true, false, false,
+					false, true, true, true, false, false, true, true, true, false, false, false, true, false, true, false,
+					true, false, false, true, false, true, true, true, false, true, true, true, false, true,
+				},
+			},
+		},
+		inputVer: 34,
+		expected: 111,
+	},
+	{
+		inputSeg: []qrSegment{
+			{
+				Mode: modeType{
+					modeBits:         7,
+					numBitsCharCount: [3]int{0, 0, 0},
+				},
+				NumChars: 0,
+				Data: []bool{
+					true, true, false, false, false, true, true, false, true, true, true, false, true, false, true, false,
+					true, false, false, false, false, true, true, false,
+				},
+			},
+		},
+		inputVer: 40,
+		expected: 28,
+	},
+	{
+		inputSeg: []qrSegment{
+			{
+				Mode: modeType{
+					modeBits:         4,
+					numBitsCharCount: [3]int{8, 16, 16},
+				},
+				NumChars: 10,
+				Data: []bool{
+					false, false, false, false, false, false, false, true, false, false, false, false, false, false, false,
+					true, false, false, false, false, false, false, false, true, false, false, false, false, false, false,
+					false, true, false, false, false, false, false, false, false, true, false, false, false, false, false,
+					false, false, true, false, false, false, false, false, false, false, true, false, false, false, false,
+					false, false, false, true, false, false, false, false, false, false, false, true, false, false, false,
+					false, false, false, false, true,
+				},
+			},
+		},
+		inputVer: 1,
+		expected: 92,
+	},
+}
+
+func Test_getTotalBits(test *testing.T) {
+	for _, data := range getTotalBits_TestData {
+		actual := getTotalBits(&data.inputSeg, data.inputVer)
+		if actual != data.expected {
+			test.Errorf(
+				"qr_segment.Test_getTotalBits:\n\tactual totalBits -> %d\n is not equal to\n\texpected totalBits -> %d",
+				actual, data.expected,
+			)
+		}
+	}
+}
+
+var isAlphanumeric_TestData = []struct {
+	input    string
+	expected bool
+}{
+	{
+		input:    "ALPHANUMERIC TEXT 123:% ",
+		expected: true,
+	},
+	{
+		input:    "ALPHANUMERIC TEXT WITH NON-ALPHANUMERIC SYMBOL!",
+		expected: false,
+	},
+	{
+		input:    "Non-alphanumeric text",
+		expected: false,
+	},
+	{
+		input:    "13245876543456",
+		expected: true,
+	},
+}
+
+func Test_isAlphanumeric(test *testing.T) {
+	for _, data := range isAlphanumeric_TestData {
+		actual := isAlphanumeric(data.input)
+		if actual != data.expected {
+			test.Errorf(
+				"qr_segment.Test_isAlphanumeric:\n\tactual totalBits -> %t\n is not equal to\n\texpected totalBits -> %t",
+				actual, data.expected,
+			)
+		}
+	}
+}
+
+var isNumeric_TestData = []struct {
+	input    string
+	expected bool
+}{
+	{
+		input:    "TEXT 123:% ",
+		expected: false,
+	},
+	{
+		input:    "TEXT WITH NON-NUMERIC SYMBOLS",
+		expected: false,
+	},
+	{
+		input:    "Non-numeric text",
+		expected: false,
+	},
+	{
+		input:    "13245876543456",
+		expected: true,
+	},
+}
+
+func Test_isNumeric(test *testing.T) {
+	for _, data := range isNumeric_TestData {
+		actual := isNumeric(data.input)
+		if actual != data.expected {
+			test.Errorf(
+				"qr_segment.Test_isNumeric:\n\tactual totalBits -> %t\n is not equal to\n\texpected totalBits -> %t",
+				actual, data.expected,
+			)
+		}
+	}
+}
+
+var getMode_TestData = []struct {
+	input    qrSegment
+	expected modeType
+}{
+	{
+		input: qrSegment{
+			Mode: modeType{
+				modeBits:         2,
+				numBitsCharCount: [3]int{9, 11, 13},
+			},
+		},
+		expected: modeType{
+			modeBits:         2,
+			numBitsCharCount: [3]int{9, 11, 13},
+		},
+	},
+	{
+		input: qrSegment{
+			Mode: modeType{
+				modeBits:         4,
+				numBitsCharCount: [3]int{8, 16, 16},
+			},
+		},
+		expected: modeType{
+			modeBits:         4,
+			numBitsCharCount: [3]int{8, 16, 16},
+		},
+	},
+	{
+		input: qrSegment{
+			Mode: modeType{
+				modeBits:         2,
+				numBitsCharCount: [3]int{9, 11, 13},
+			},
+		},
+		expected: modeType{
+			modeBits:         2,
+			numBitsCharCount: [3]int{9, 11, 13},
+		},
+	},
+}
+
+func Test_getMode(test *testing.T) {
+	for _, data := range getMode_TestData {
+		actual := data.input.getMode()
+		if actual.modeBits != data.expected.modeBits {
+			test.Errorf(
+				"qr_segment.Test_getMode:\n\tactual Mode -> %d\n is not equal to\n\texpected Mode -> %d",
+				actual.modeBits, data.expected.modeBits,
+			)
+		}
+		for i, d := range actual.numBitsCharCount {
+			if d != data.expected.numBitsCharCount[i] {
+				test.Errorf(
+					"qr_segment.Test_getMode:\n\tactual Mode -> %d\n is not equal to\n\texpected Mode -> %d",
+					d, data.expected.numBitsCharCount[i],
+				)
+			}
+		}
+	}
+}
+
+var getNumChars_TestData = []struct {
+	input    qrSegment
+	expected int
+}{
+	{
+		input: qrSegment{
+			NumChars: 1,
+		},
+		expected: 1,
+	},
+	{
+		input: qrSegment{
+			NumChars: 10,
+		},
+		expected: 10,
+	},
+	{
+		input: qrSegment{
+			NumChars: 0,
+		},
+		expected: 0,
+	},
+	{
+		input: qrSegment{
+			NumChars: 121,
+		},
+		expected: 121,
+	},
+	{
+		input: qrSegment{
+			NumChars: 98,
+		},
+		expected: 98,
+	},
+}
+
+func Test_getNumChars(test *testing.T) {
+	for _, data := range getNumChars_TestData {
+		actual := data.input.getNumChars()
+		if actual != data.expected {
+			test.Errorf(
+				"qr_segment.Test_getNumChars:\n\tactual numChars -> %d\n is not equal to\n\texpected numChars -> %d",
+				actual, data.expected,
+			)
+		}
+	}
+}
+
+var getData_TestData = []struct {
+	input    qrSegment
+	expected []bool
+}{
+	{
+		input: qrSegment{
+			Mode: modeType{
+				modeBits:         2,
+				numBitsCharCount: [3]int{9, 11, 13},
+			},
+			NumChars: 9,
+			Data: []bool{
+				true, false, true, false, false, false, false, false, true, false, false, false, true, true, true, true,
+				true, false, true, true, false, false, true, true, false, false, true, true, true, false, false, false,
+				true, false, true, false, true, false, false, true, false, true, true, true, false, true, true, true,
+				false, true,
+			},
+		},
+		expected: []bool{
+			true, false, true, false, false, false, false, false, true, false, false, false, true, true, true, true,
+			true, false, true, true, false, false, true, true, false, false, true, true, true, false, false, false,
+			true, false, true, false, true, false, false, true, false, true, true, true, false, true, true, true,
+			false, true,
+		},
+	},
+	{
+		input: qrSegment{
+			Mode: modeType{
+				modeBits:         2,
+				numBitsCharCount: [3]int{9, 11, 13},
+			},
+			NumChars: 17,
+			Data: []bool{
+				true, false, true, false, false, false, false, false, true, false, false, false, true, true, true, true,
+				true, false, true, true, false, false, true, true, false, false, true, false, true, true, true, true,
+				false, true, false, false, false, false, true, false, false, false, true, true, true, false, true, false,
+				false, true, false, true, false, true, false, false, true, false, true, false, false, true, false, false,
+				false, true, true, true, false, false, true, true, true, false, false, false, true, false, true, false,
+				true, false, false, true, false, true, true, true, false, true, true, true, false, true,
+			},
+		},
+		expected: []bool{
+			true, false, true, false, false, false, false, false, true, false, false, false, true, true, true, true,
+			true, false, true, true, false, false, true, true, false, false, true, false, true, true, true, true,
+			false, true, false, false, false, false, true, false, false, false, true, true, true, false, true, false,
+			false, true, false, true, false, true, false, false, true, false, true, false, false, true, false, false,
+			false, true, true, true, false, false, true, true, true, false, false, false, true, false, true, false,
+			true, false, false, true, false, true, true, true, false, true, true, true, false, true,
+		},
+	},
+	{
+		input: qrSegment{
+			Mode: modeType{
+				modeBits:         2,
+				numBitsCharCount: [3]int{9, 11, 13},
+			},
+			NumChars: 41,
+			Data: []bool{
+				true, false, true, false, false, false, false, false, true, false, false, false, true, true, true, true,
+				true, false, true, true, false, false, true, true, false, false, true, true, true, false, false, false,
+				true, false, true, false, true, false, false, true, false, true, true, true, true, false, true, false,
+				false, true, true, true, true, false, true, true, false, true, true, false, true, true, false, false,
+				true, false, true, false, true, false, false, true, false, true, false, true, false, true, true, false,
+				false, true, true, false, true, false, true, true, true, false, true, false, true, false, true, true,
+				true, false, false, false, false, true, true, true, true, true, true, true, false, true, true, false,
+				false, true, true, false, true, true, false, true, true, true, true, true, true, true, true, false,
+				false, false, false, false, false, false, false, false, false, true, false, true, true, false, true,
+				false, false, false, false, false, true, false, true, true, false, true, false, false, false, false,
+				false, true, false, true, true, false, true, false, false, false, false, false, true, false, true,
+				true, false, true, false, false, false, false, false, true, false, true, true, false, true, false,
+				false, false, false, false, true, false, true, true, false, true, false, false, false, false, false,
+				true, false, true, true, false, true, false, false, false, false, false, true, false, true, true,
+				false, true, false, false, false, false, false, true,
+			},
+		},
+		expected: []bool{
+			true, false, true, false, false, false, false, false, true, false, false, false, true, true, true, true,
+			true, false, true, true, false, false, true, true, false, false, true, true, true, false, false, false,
+			true, false, true, false, true, false, false, true, false, true, true, true, true, false, true, false,
+			false, true, true, true, true, false, true, true, false, true, true, false, true, true, false, false,
+			true, false, true, false, true, false, false, true, false, true, false, true, false, true, true, false,
+			false, true, true, false, true, false, true, true, true, false, true, false, true, false, true, true,
+			true, false, false, false, false, true, true, true, true, true, true, true, false, true, true, false,
+			false, true, true, false, true, true, false, true, true, true, true, true, true, true, true, false,
+			false, false, false, false, false, false, false, false, false, true, false, true, true, false, true,
+			false, false, false, false, false, true, false, true, true, false, true, false, false, false, false,
+			false, true, false, true, true, false, true, false, false, false, false, false, true, false, true,
+			true, false, true, false, false, false, false, false, true, false, true, true, false, true, false,
+			false, false, false, false, true, false, true, true, false, true, false, false, false, false, false,
+			true, false, true, true, false, true, false, false, false, false, false, true, false, true, true,
+			false, true, false, false, false, false, false, true,
+		},
+	},
+}
+
+func Test_getData(test *testing.T) {
+	for _, data := range getData_TestData {
+		actual := data.input.getData()
+		for i, d := range *actual {
+			if d != data.expected[i] {
+				test.Errorf(
+					"qr_segment.Test_getData:\n\tactual numChars -> %t\n is not equal to\n\texpected numChars -> %t",
+					d, data.expected[i],
 				)
 			}
 		}

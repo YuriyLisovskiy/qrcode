@@ -105,7 +105,7 @@ func makeSegments(text string) []qrSegment {
 
 // Returns a segment representing an Extended Channel Interpretation
 // (ECI) designator with the given assignment value.
-func (qrs qrSegment) makeEci(assignVal int64) qrSegment {
+func makeEci(assignVal int64) qrSegment {
 	bitBuf := bitBuffer{}
 	if 0 <= assignVal && assignVal < (1<<7) {
 		bitBuf = bitBuf.appendBits(uint32(assignVal), 8)
