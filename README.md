@@ -2,6 +2,7 @@
 [![License](https://img.shields.io/badge/BSD-3--Clause-orange.svg)](LICENSE)
 [![Language](https://img.shields.io/badge/Go-1.10-blue.svg)](https://golang.org/)
 [![Build Status](https://travis-ci.org/YuriyLisovskiy/qrcode.svg?branch=master)](https://travis-ci.org/YuriyLisovskiy/qrcode)
+[![GoDoc](https://img.shields.io/badge/go-docs-blue.svg)](https://godoc.org/github.com/YuriyLisovskiy/qrcode/qr)
 ### Installation
 ```
 $ go get github.com/YuriyLisovskiy/qrcode/qr
