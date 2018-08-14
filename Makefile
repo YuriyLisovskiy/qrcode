@@ -10,10 +10,12 @@ all: test demo
 test:
 	@echo Running tests...
 	@go test -v -timeout 1h -covermode=count -coverprofile=$(COVER_OUT) ${PACKAGES}
+	@echo Generating coverage report...
+	@go tool cover -html $(COVER_OUT) -o coverage.html
 	@echo Done
 
 clean:
-	@rm -rf $(COVER_OUT)
+	@rm -rf $(COVER_OUT) coverage.html
 
 demo:
 	@go run demo.go
