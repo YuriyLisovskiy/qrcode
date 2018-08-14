@@ -1,7 +1,7 @@
 # QR Code Generator
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
 [![Minimum Go Version](https://img.shields.io/badge/Go-v1.3-blue.svg)](https://golang.org/)
-[![Go Documentation](https://img.shields.io/badge/go-docs-blue.svg)](https://godoc.org/github.com/YuriyLisovskiy/qrcode/qr)
+[![Go Documentation](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/YuriyLisovskiy/qrcode/qr)
 [![Build Status](https://travis-ci.org/YuriyLisovskiy/qrcode.svg?branch=master)](https://travis-ci.org/YuriyLisovskiy/qrcode)
 ### Installation
 ```
