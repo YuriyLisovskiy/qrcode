@@ -15,10 +15,10 @@ type reedSolomonGenerator struct {
 
 // Creates a Reed-Solomon ECC generator for the given degree. This could be implemented
 // as a lookup table over all possible parameter values, instead of as an algorithm.
-func newReedSolomonGenerator(degree int) reedSolomonGenerator {
+func newReedSolomonGenerator(degree int) (reedSolomonGenerator, error) {
 	newRSG := reedSolomonGenerator{}
 	if degree < 1 || degree > 255 {
-		panic(rsgErr("newReedSolomonGenerator", "degree out of range"))
+		return reedSolomonGenerator{}, rsgErr("newReedSolomonGenerator", "degree out of range")
 	}
 	newRSG.coefficients = make([]uint8, degree)
 	newRSG.coefficients[degree-1] = 1
@@ -32,7 +32,7 @@ func newReedSolomonGenerator(degree int) reedSolomonGenerator {
 		}
 		root = newRSG.multiply(root, 0x02)
 	}
-	return newRSG
+	return newRSG, nil
 }
 
 // Computes and returns the Reed-Solomon error correction codewords for the given
@@ -59,9 +59,6 @@ func (reedSolomonGenerator) multiply(x, y uint8) uint8 {
 	for i := 7; i >= 0; i-- {
 		z = (z << 1) ^ ((z >> 7) * 0x11D)
 		z = int(uint8(z) ^ ((y>>uint8(i))&1)*x)
-	}
-	if z>>8 != 0 {
-		panic(rsgErr("multiply", "assertion error"))
 	}
 	return uint8(z)
 }

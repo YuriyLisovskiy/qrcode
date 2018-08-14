@@ -4,7 +4,9 @@
 
 package qr
 
-import "testing"
+import (
+	"testing"
+		)
 
 var newReedSolomonGenerator_TestData = []struct {
 	degree   int
@@ -46,7 +48,7 @@ var newReedSolomonGenerator_TestData = []struct {
 
 func Test_newReedSolomonGenerator(test *testing.T) {
 	for _, data := range newReedSolomonGenerator_TestData {
-		actual := newReedSolomonGenerator(data.degree)
+		actual, _ := newReedSolomonGenerator(data.degree)
 		if len(actual.coefficients) != data.degree {
 			test.Errorf(
 				"reed_solomon_generator.Test_newReedSolomonGenerator:\n\tlen of reedSolomonGenerator's coefficients -> %d\n is not equal to\n\treedSolomonGenerator degree -> %d",
@@ -66,6 +68,32 @@ func Test_newReedSolomonGenerator(test *testing.T) {
 					coefficient, data.expected.coefficients[i],
 				)
 			}
+		}
+	}
+}
+
+var newReedSolomonGeneratorErr_TestData = []struct {
+	degree   int
+	expected error
+}{
+	{
+		degree: 0,
+		expected: rsgErr("newReedSolomonGenerator", "degree out of range"),
+	},
+	{
+		degree: 256,
+		expected: rsgErr("newReedSolomonGenerator", "degree out of range"),
+	},
+}
+
+func Test_newReedSolomonGeneratorErr(test *testing.T) {
+	for _, data := range newReedSolomonGeneratorErr_TestData {
+		_, actual := newReedSolomonGenerator(data.degree)
+		if actual.Error() != data.expected.Error() {
+			test.Errorf(
+				"reed_solomon_generator.Test_newReedSolomonGeneratorErr:\n\tfunc does not return an error for degree %d",
+				data.degree,
+			)
 		}
 	}
 }

@@ -443,7 +443,10 @@ func (gen *Generator) appendErrorCorrection(data []uint8) []uint8 {
 	numShortBlocks := int(numBlocks - rawCodewords%numBlocks)
 	shortBlockLen := int(rawCodewords / numBlocks)
 	var blocks [][]uint8
-	rs := newReedSolomonGenerator(blockEccLen)
+	rs, err := newReedSolomonGenerator(blockEccLen)
+	if err != nil {
+		panic(err)
+	}
 	i, start := 0, 0
 	for ; i < numBlocks; i++ {
 		c := 1
