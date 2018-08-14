@@ -50,7 +50,10 @@ type Generator struct {
 // QR Code version is automatically chosen for the output. The ECC level of the result may be higher than
 // the ecl argument if it can be done without increasing the version.
 func (gen *Generator) EncodeText(text string) Generator {
-	segments := makeSegments(text)
+	segments, err := makeSegments(text)
+	if err != nil {
+		panic(err)
+	}
 	return gen.encodeSegments(&segments, eccLOW, 1, 40, -1, true)
 }
 
@@ -60,7 +63,11 @@ func (gen *Generator) EncodeText(text string) Generator {
 // bytes allowed is 2953. The smallest possible QR Code version is automatically chosen for the output.
 // The ECC level of the result may be higher than the ecl argument if it can be done without increasing the version.
 func (gen *Generator) EncodeBinary(data *[]uint8) Generator {
-	return gen.encodeSegments(&[]qrSegment{makeBytes(data)}, eccLOW, 1, 40, -1, true)
+	b, err := makeBytes(data)
+	if err != nil {
+		panic(err)
+	}
+	return gen.encodeSegments(&[]qrSegment{b}, eccLOW, 1, 40, -1, true)
 }
 
 // Draws generated QR Code to the terminal window.
@@ -210,7 +217,11 @@ func (gen *Generator) encodeSegments(segs *[]qrSegment, ecl eccType, minVersion,
 	var version, dataUsedBits int
 	for version = minVersion; ; version++ {
 		dataCapacityBits := gen.getNumDataCodewords(version, ecl) * 8
-		dataUsedBits = getTotalBits(segs, version)
+		var err error
+		dataUsedBits, err = getTotalBits(segs, version)
+		if err != nil {
+			panic(err)
+		}
 		if dataUsedBits != -1 && dataUsedBits <= dataCapacityBits {
 			break
 		}

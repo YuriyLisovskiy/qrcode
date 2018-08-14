@@ -27,36 +27,36 @@ type qrSegment struct {
 }
 
 // Returns a segment representing the given binary data encoded in byte mode.
-func makeBytes(data *[]uint8) qrSegment {
+func makeBytes(data *[]uint8) (qrSegment, error) {
 	if len(*data) > math.MaxInt32 {
-		panic(qrSegmentErr("makeBytes", "data too long"))
+		return qrSegment{}, qrSegmentErr("makeBytes", "data too long")
 	}
 	bitBuf := bitBuffer{}
 	var err error
 	for _, bit := range *data {
 		bitBuf, err = bitBuf.appendBits(uint32(bit), 8)
 		if err != nil {
-			panic(err)
+			return qrSegment{}, err
 		}
 	}
-	return qrSegment{isBYTE, len(*data), bitBuf}
+	return qrSegment{isBYTE, len(*data), bitBuf}, nil
 }
 
 // Returns a segment representing the given string of decimal digits encoded in numeric mode.
-func makeNumeric(digits string) qrSegment {
+func makeNumeric(digits string) (qrSegment, error) {
 	bitBuf := bitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
 	var err error
 	for _, digit := range digits {
 		if digit < '0' || digit > '9' {
-			panic(qrSegmentErr("makeNumeric", "string contains non-numeric characters"))
+			return qrSegment{}, qrSegmentErr("makeNumeric", "string contains non-numeric characters")
 		}
 		accumData = accumData*10 + (int(digit) - '0')
 		accumCount++
 		if accumCount == 3 {
 			bitBuf, err = bitBuf.appendBits(uint32(accumData), 10)
 			if err != nil {
-				panic(err)
+				return qrSegment{}, err
 			}
 			accumData, accumCount = 0, 0
 		}
@@ -65,30 +65,30 @@ func makeNumeric(digits string) qrSegment {
 	if accumCount > 0 {
 		bitBuf, err = bitBuf.appendBits(uint32(accumData), accumCount*3+1)
 		if err != nil {
-			panic(err)
+			return qrSegment{}, err
 		}
 	}
-	return qrSegment{isNUMERIC, charCount, bitBuf}
+	return qrSegment{isNUMERIC, charCount, bitBuf}, nil
 }
 
 // Returns a segment representing the given text string encoded in alphanumeric mode.
 //
 // The characters allowed are: 0 to 9, A to Z (uppercase only), space,
 // dollar, percent, asterisk, plus, hyphen, period, slash, colon.
-func makeAlphanumeric(text string) qrSegment {
+func makeAlphanumeric(text string) (qrSegment, error) {
 	bitBuf := bitBuffer{}
 	accumData, accumCount, charCount := 0, 0, 0
 	var err error
 	for _, char := range text {
 		if !strings.ContainsRune(alphanumericCharset, char) {
-			panic(qrSegmentErr("makeAlphanumeric", "string contains unencodable characters in alphanumeric mode"))
+			return qrSegment{}, qrSegmentErr("makeAlphanumeric", "string contains unencodable characters in alphanumeric mode")
 		}
 		accumData = accumData*45 + (len(alphanumericCharset[strings.IndexRune(alphanumericCharset, char):])-len(alphanumericCharset))*-1
 		accumCount++
 		if accumCount == 2 {
 			bitBuf, err = bitBuf.appendBits(uint32(accumData), 11)
 			if err != nil {
-				panic(err)
+				return qrSegment{}, err
 			}
 			accumData, accumCount = 0, 0
 		}
@@ -97,88 +97,91 @@ func makeAlphanumeric(text string) qrSegment {
 	if accumCount > 0 {
 		bitBuf, err = bitBuf.appendBits(uint32(accumData), 6)
 		if err != nil {
-			panic(err)
+			return qrSegment{}, err
 		}
 	}
-	return qrSegment{isALPHANUMERIC, charCount, bitBuf}
+	return qrSegment{isALPHANUMERIC, charCount, bitBuf}, nil
 }
 
 // Returns a list of zero or more segments to represent the given text string.
 //
 // The result may use various segment modes and switch modes to optimize the length of the bit stream.
-func makeSegments(text string) []qrSegment {
-	var result []qrSegment
+func makeSegments(text string) (result []qrSegment, err error) {
+	var preparedSeg qrSegment
 	if text == "" {
 
 	} else if isNumeric(text) {
-		result = []qrSegment{makeNumeric(text)}
+		preparedSeg, err = makeNumeric(text)
+		if err != nil {
+			return
+		}
+		result = []qrSegment{preparedSeg}
 	} else if isAlphanumeric(text) {
-		result = []qrSegment{makeAlphanumeric(text)}
+		preparedSeg, err = makeAlphanumeric(text)
+		if err != nil {
+			return
+		}
+		result = []qrSegment{preparedSeg}
 	} else {
 		bytes := []uint8(text)
-		result = []qrSegment{makeBytes(&bytes)}
+		preparedSeg, err = makeBytes(&bytes)
+		if err != nil {
+			return
+		}
+		result = []qrSegment{preparedSeg}
 	}
-	return result
+	return
 }
 
 // Returns a segment representing an Extended Channel Interpretation
 // (ECI) designator with the given assignment value.
-func makeEci(assignVal int64) qrSegment {
+func makeEci(assignVal int64) (qrSegment, error) {
 	bitBuf := bitBuffer{}
 	var err error
 	if 0 <= assignVal && assignVal < (1<<7) {
 		bitBuf, err = bitBuf.appendBits(uint32(assignVal), 8)
 		if err != nil {
-			panic(err)
+			return qrSegment{}, err
 		}
 	} else if (1<<7) <= assignVal && assignVal < (1<<14) {
-		bitBuf, err = bitBuf.appendBits(2, 2)
-		if err != nil {
-			panic(err)
-		}
+		bitBuf, _ = bitBuf.appendBits(2, 2)
 		bitBuf, err = bitBuf.appendBits(uint32(assignVal), 14)
 		if err != nil {
-			panic(err)
+			return qrSegment{}, err
 		}
 	} else if (1<<14) <= assignVal && assignVal < 1000000 {
-		bitBuf, err = bitBuf.appendBits(6, 3)
-		if err != nil {
-			panic(err)
-		}
+		bitBuf, _ = bitBuf.appendBits(6, 3)
 		bitBuf, err = bitBuf.appendBits(uint32(assignVal), 21)
 		if err != nil {
-			panic(err)
+			return qrSegment{}, err
 		}
 	} else {
-		panic(qrSegmentErr("makeEci", "ECI assignment value out of range"))
+		return qrSegment{}, qrSegmentErr("makeEci", "ECI assignment value out of range")
 	}
-	return qrSegment{isECI, 0, bitBuf}
+	return qrSegment{isECI, 0, bitBuf}, nil
 }
 
 // Helper function.
-func getTotalBits(segs *[]qrSegment, version int) int {
+func getTotalBits(segs *[]qrSegment, version int) (int, error) {
 	if version < 1 || version > 40 {
-		panic(qrSegmentErr("getTotalBits", "version number out of range"))
+		return -1, qrSegmentErr("getTotalBits", "version number out of range")
 	}
 	result := 0
 	for _, seg := range *segs {
-		ccbits, err := seg.Mode.numCharCountBits(version)
-		if err != nil {
-			panic(err)
-		}
+		ccbits, _ := seg.Mode.numCharCountBits(version)
 		if uint(seg.NumChars) >= (uint(1) << uint(ccbits)) {
-			return -1
+			return -1, nil
 		}
 		if 4+ccbits > maxInt-result {
-			return -1
+			return -1, nil
 		}
 		result += 4 + ccbits
 		if len(seg.Data) > (maxInt - result) {
-			return -1
+			return -1, nil
 		}
 		result += len(seg.Data)
 	}
-	return result
+	return result, nil
 }
 
 // Tests whether the given string can be encoded as a segment in alphanumeric mode.

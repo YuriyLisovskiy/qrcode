@@ -4,9 +4,7 @@
 
 package qr
 
-import (
-	"testing"
-		)
+import "testing"
 
 var newReedSolomonGenerator_TestData = []struct {
 	degree   int

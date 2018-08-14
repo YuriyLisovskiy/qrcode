@@ -68,7 +68,7 @@ var makeBytes_TestData = []struct {
 
 func Test_makeBytes(test *testing.T) {
 	for _, data := range makeBytes_TestData {
-		actual := makeBytes(&data.input)
+		actual, _ := makeBytes(&data.input)
 		if actual.NumChars != data.expected.NumChars {
 			test.Errorf(
 				"qr_segment.Test_makeBytes:\n\tactual numChars -> %d\n is not equal to\n\texpected numChars -> %d",
@@ -154,7 +154,7 @@ var makeNumeric_TestData = []struct {
 
 func Test_makeNumeric(test *testing.T) {
 	for _, data := range makeNumeric_TestData {
-		actual := makeNumeric(data.input)
+		actual, _ := makeNumeric(data.input)
 		if actual.NumChars != data.expected.NumChars {
 			test.Errorf(
 				"qr_segment.Test_makeNumeric:\n\tactual numChars -> %d\n is not equal to\n\texpected numChars -> %d",
@@ -182,6 +182,36 @@ func Test_makeNumeric(test *testing.T) {
 					d, data.expected.Data[i],
 				)
 			}
+		}
+	}
+}
+
+var makeNumericErr_TestData = []struct {
+	input    string
+	expected error
+}{
+	{
+		input:    "-1",
+		expected: qrSegmentErr("makeNumeric", "string contains non-numeric characters"),
+	},
+	{
+		input:    "d",
+		expected: qrSegmentErr("makeNumeric", "string contains non-numeric characters"),
+	},
+	{
+		input:    "-138456789",
+		expected: qrSegmentErr("makeNumeric", "string contains non-numeric characters"),
+	},
+}
+
+func Test_makeNumericErr(test *testing.T) {
+	for _, data := range makeNumericErr_TestData {
+		_, actual := makeNumeric(data.input)
+		if actual.Error() != data.expected.Error() {
+			test.Errorf(
+				"qr_segment.Test_makeNumericErr:\n\tfunc does not return an error for text %s",
+				data.input,
+			)
 		}
 	}
 }
@@ -255,7 +285,7 @@ var makeAlphanumeric_TestData = []struct {
 
 func Test_makeAlphanumeric(test *testing.T) {
 	for _, data := range makeAlphanumeric_TestData {
-		actual := makeAlphanumeric(data.input)
+		actual, _ := makeAlphanumeric(data.input)
 		if actual.NumChars != data.expected.NumChars {
 			test.Errorf(
 				"qr_segment.Test_makeAlphanumeric:\n\tactual numChars -> %d\n is not equal to\n\texpected numChars -> %d",
@@ -283,6 +313,36 @@ func Test_makeAlphanumeric(test *testing.T) {
 					d, data.expected.Data[i],
 				)
 			}
+		}
+	}
+}
+
+var makeAlphanumericErr_TestData = []struct {
+	input    string
+	expected error
+}{
+	{
+		input:    "SOME TEXT!",
+		expected: qrSegmentErr("makeAlphanumeric", "string contains unencodable characters in alphanumeric mode"),
+	},
+	{
+		input:    "SOME ANOTHER TEXT?",
+		expected: qrSegmentErr("makeAlphanumeric", "string contains unencodable characters in alphanumeric mode"),
+	},
+	{
+		input:    "SOME TEXT WITH NUMBERS#: 10101010101010101",
+		expected: qrSegmentErr("makeAlphanumeric", "string contains unencodable characters in alphanumeric mode"),
+	},
+}
+
+func Test_makeAlphanumericErr(test *testing.T) {
+	for _, data := range makeAlphanumericErr_TestData {
+		_, actual := makeAlphanumeric(data.input)
+		if actual.Error() != data.expected.Error() {
+			test.Errorf(
+				"qr_segment.Test_makeAlphanumericErr:\n\tfunc does not return error for data %s",
+				data.input,
+			)
 		}
 	}
 }
@@ -364,7 +424,7 @@ var makeSegments_TestData = []struct {
 
 func Test_makeSegments(test *testing.T) {
 	for _, data := range makeSegments_TestData {
-		actual := makeSegments(data.input)
+		actual, _ := makeSegments(data.input)
 		if actual[0].NumChars != data.expected[0].NumChars {
 			test.Errorf(
 				"qr_segment.Test_makeSegments:\n\tactual numChars -> %d\n is not equal to\n\texpected numChars -> %d",
@@ -400,6 +460,19 @@ var makeEci_TestData = []struct {
 	input    int64
 	expected qrSegment
 }{
+	{
+		input: 125,
+		expected: qrSegment{
+			Mode: modeType{
+				modeBits:         7,
+				numBitsCharCount: [3]int{0, 0, 0},
+			},
+			NumChars: 0,
+			Data: []bool{
+				false, true, true, true, true, true, false, true,
+			},
+		},
+	},
 	{
 		input: 456789,
 		expected: qrSegment{
@@ -442,11 +515,65 @@ var makeEci_TestData = []struct {
 			},
 		},
 	},
+	{
+		input: 129,
+		expected: qrSegment{
+			Mode: modeType{
+				modeBits:         7,
+				numBitsCharCount: [3]int{0, 0, 0},
+			},
+			NumChars: 0,
+			Data: []bool{
+				true, false, false, false, false, false, false, false, true, false, false, false, false, false, false, true,
+			},
+		},
+	},
+	{
+		input: 16383,
+		expected: qrSegment{
+			Mode: modeType{
+				modeBits:         7,
+				numBitsCharCount: [3]int{0, 0, 0},
+			},
+			NumChars: 0,
+			Data: []bool{
+				true, false, true, true, true, true, true, true, true, true, true, true, true, true, true, true,
+			},
+		},
+	},
+	{
+		input: 16385,
+		expected: qrSegment{
+			Mode: modeType{
+				modeBits:         7,
+				numBitsCharCount: [3]int{0, 0, 0},
+			},
+			NumChars: 0,
+			Data: []bool{
+				true, true, false, false, false, false, false, false, false, true, false, false, false, false, false,
+				false, false, false, false, false, false, false, false, true,
+			},
+		},
+	},
+	{
+		input: 999999,
+		expected: qrSegment{
+			Mode: modeType{
+				modeBits:         7,
+				numBitsCharCount: [3]int{0, 0, 0},
+			},
+			NumChars: 0,
+			Data: []bool{
+				true, true, false, false, true, true, true, true, false, true, false, false, false, false, true, false,
+				false, false, true, true, true, true, true, true,
+			},
+		},
+	},
 }
 
 func Test_makeEci(test *testing.T) {
 	for _, data := range makeEci_TestData {
-		actual := makeEci(data.input)
+		actual, _ := makeEci(data.input)
 		if actual.NumChars != data.expected.NumChars {
 			test.Errorf(
 				"qr_segment.Test_makeEci:\n\tactual numChars -> %d\n is not equal to\n\texpected numChars -> %d",
@@ -472,6 +599,39 @@ func Test_makeEci(test *testing.T) {
 				test.Errorf(
 					"qr_segment.Test_makeEci:\n\tactual Data -> %t\n is not equal to\n\texpected Data -> %t",
 					d, data.expected.Data[i],
+				)
+			}
+		}
+	}
+}
+
+var makeEciErr_TestData = []struct {
+	input    int64
+	expected error
+}{
+	{
+		input:    -1,
+		expected: qrSegmentErr("makeEci", "ECI assignment value out of range"),
+	},
+	{
+		input:    4532544532,
+		expected: qrSegmentErr("makeEci", "ECI assignment value out of range"),
+	},
+}
+
+func Test_makeEciErr(test *testing.T) {
+	for _, data := range makeEciErr_TestData {
+		_, actual := makeEci(data.input)
+		if actual == nil {
+			test.Errorf(
+				"qr_segment.Test_makeEciErr:\n\tfunc does not return an error for assignVal %d",
+				data.input,
+			)
+		} else {
+			if actual.Error() != data.expected.Error() {
+				test.Errorf(
+					"qr_segment.Test_makeEciErr:\n\tfunc does not return an error for assignVal %d",
+					data.input,
 				)
 			}
 		}
@@ -542,15 +702,137 @@ var getTotalBits_TestData = []struct {
 		inputVer: 1,
 		expected: 92,
 	},
+	{
+		inputSeg: []qrSegment{
+			{
+				Mode: modeType{
+					modeBits:         4,
+					numBitsCharCount: [3]int{8, 16, 16},
+				},
+				NumChars: 456789,
+			},
+		},
+		inputVer: 2,
+		expected: -1,
+	},
+	{
+		inputSeg: []qrSegment{
+			{
+				Mode: modeType{
+					modeBits:         4,
+					numBitsCharCount: [3]int{8, 16, 16},
+				},
+				NumChars: 456789,
+			},
+		},
+		inputVer: 34,
+		expected: -1,
+	},
+	{
+		inputSeg: []qrSegment{
+			{
+				Mode: modeType{
+					modeBits:         4,
+					numBitsCharCount: [3]int{8, 16, 16},
+				},
+				NumChars: 456789,
+			},
+		},
+		inputVer: 12,
+		expected: -1,
+	},
+	{
+		inputSeg: []qrSegment{
+			{
+				Mode: modeType{
+					modeBits:         4,
+					numBitsCharCount: [3]int{8, 16, 16},
+				},
+				NumChars: 456789,
+			},
+		},
+		inputVer: 39,
+		expected: -1,
+	},
+	{
+		inputSeg: []qrSegment{
+			{
+				Mode: modeType{
+					modeBits:         4,
+					numBitsCharCount: [3]int{8, 16, 16},
+				},
+				NumChars: 456789,
+			},
+		},
+		inputVer: 7,
+		expected: -1,
+	},
 }
 
 func Test_getTotalBits(test *testing.T) {
 	for _, data := range getTotalBits_TestData {
-		actual := getTotalBits(&data.inputSeg, data.inputVer)
+		actual, _ := getTotalBits(&data.inputSeg, data.inputVer)
 		if actual != data.expected {
 			test.Errorf(
 				"qr_segment.Test_getTotalBits:\n\tactual totalBits -> %d\n is not equal to\n\texpected totalBits -> %d",
 				actual, data.expected,
+			)
+		}
+	}
+}
+
+var getTotalBitsErr_TestData = []struct {
+	inputSeg []qrSegment
+	inputVer int
+	expected error
+}{
+	{
+		inputSeg: []qrSegment{
+			{
+				Mode: modeType{
+					modeBits:         2,
+					numBitsCharCount: [3]int{9, 11, 13},
+				},
+				NumChars: 17,
+				Data: []bool{
+					true, false, true, false, false, false, false, false, true, false, false, false, true, true, true, true,
+					true, false, true, true, false, false, true, true, false, false, true, false, true, true, true, true,
+					false, true, false, false, false, false, true, false, false, false, true, true, true, false, true, false,
+					false, true, false, true, false, true, false, false, true, false, true, false, false, true, false, false,
+					false, true, true, true, false, false, true, true, true, false, false, false, true, false, true, false,
+					true, false, false, true, false, true, true, true, false, true, true, true, false, true,
+				},
+			},
+		},
+		inputVer: 0,
+		expected: qrSegmentErr("getTotalBits", "version number out of range"),
+	},
+	{
+		inputSeg: []qrSegment{
+			{
+				Mode: modeType{
+					modeBits:         7,
+					numBitsCharCount: [3]int{0, 0, 0},
+				},
+				NumChars: 0,
+				Data: []bool{
+					true, true, false, false, false, true, true, false, true, true, true, false, true, false, true, false,
+					true, false, false, false, false, true, true, false,
+				},
+			},
+		},
+		inputVer: 41,
+		expected: qrSegmentErr("getTotalBits", "version number out of range"),
+	},
+}
+
+func Test_getTotalBitsErr(test *testing.T) {
+	for _, data := range getTotalBitsErr_TestData {
+		_, actual := getTotalBits(&data.inputSeg, data.inputVer)
+		if actual.Error() != data.expected.Error() {
+			test.Errorf(
+				"qr_segment.Test_getTotalBitsErr:\n\tfunc does not return error for version %d",
+				data.inputVer,
 			)
 		}
 	}

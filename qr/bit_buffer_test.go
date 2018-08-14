@@ -4,9 +4,7 @@
 
 package qr
 
-import (
-	"testing"
-	)
+import "testing"
 
 var appendBits_TestData = []struct {
 	inputVal []uint32
@@ -121,6 +119,11 @@ var appendBitsErrBitBufValOutOfRange_TestData = []struct {
 	{
 		inputVal: []uint32{1, 1, 1, 1, 1, 1, 1},
 		inputLen: []int{32, 33, 34, 35, 36, 37, 80},
+		expected: ErrBitBufValOutOfRange,
+	},
+	{
+		inputVal: []uint32{12, 3},
+		inputLen: []int{16384, 1000000},
 		expected: ErrBitBufValOutOfRange,
 	},
 }
