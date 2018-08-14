@@ -26,15 +26,15 @@ func (m modeType) getModeBits() int {
 }
 
 // Returns the bit width of the segment character count field for this mode object at the given version number.
-func (m modeType) numCharCountBits(ver int) int {
+func (m modeType) numCharCountBits(ver int) (int, error) {
 	if 1 <= ver && ver <= 9 {
-		return m.numBitsCharCount[0]
+		return m.numBitsCharCount[0], nil
 	}
 	if 10 <= ver && ver <= 26 {
-		return m.numBitsCharCount[1]
+		return m.numBitsCharCount[1], nil
 	}
 	if 27 <= ver && ver <= 40 {
-		return m.numBitsCharCount[2]
+		return m.numBitsCharCount[2], nil
 	}
-	panic("package qr: modeType.numCharCountBits: version number out of range")
+	return 0, ErrModeTypeVerNumOutOfRange
 }

@@ -228,15 +228,35 @@ func (gen *Generator) encodeSegments(segs *[]qrSegment, ecl eccType, minVersion,
 	}
 	dataCapacityBits := uint(gen.getNumDataCodewords(version, ecl) * 8)
 	var bitBuf bitBuffer
+	var err error
 	for _, seg := range *segs {
-		bitBuf = bitBuf.appendBits(uint32(seg.getMode().getModeBits()), 4)
-		bitBuf = bitBuf.appendBits(uint32(seg.getNumChars()), seg.getMode().numCharCountBits(version))
+		bitBuf, err = bitBuf.appendBits(uint32(seg.getMode().getModeBits()), 4)
+		if err != nil {
+			panic(err)
+		}
+		bits, err := seg.getMode().numCharCountBits(version)
+		if err != nil {
+			panic(err)
+		}
+		bitBuf, err = bitBuf.appendBits(uint32(seg.getNumChars()), bits)
+		if err != nil {
+			panic(err)
+		}
 		bitBuf = append(bitBuf, *seg.getData()...)
 	}
-	bitBuf = bitBuf.appendBits(0, int(math.Min(float64(4), float64(dataCapacityBits-uint(len(bitBuf))))))
-	bitBuf = bitBuf.appendBits(0, (8-len(bitBuf)%8)%8)
+	bitBuf, err = bitBuf.appendBits(0, int(math.Min(float64(4), float64(dataCapacityBits-uint(len(bitBuf))))))
+	if err != nil {
+		panic(err)
+	}
+	bitBuf, err = bitBuf.appendBits(0, (8-len(bitBuf)%8)%8)
+	if err != nil {
+		panic(err)
+	}
 	for padByte := 0xEC; uint(len(bitBuf)) < dataCapacityBits; padByte ^= 0xEC ^ 0x11 {
-		bitBuf = bitBuf.appendBits(uint32(padByte), 8)
+		bitBuf, err = bitBuf.appendBits(uint32(padByte), 8)
+		if err != nil {
+			panic(err)
+		}
 	}
 	if len(bitBuf)%8 != 0 {
 		panic(generatorErr("encodeSegments", "assertion error"))

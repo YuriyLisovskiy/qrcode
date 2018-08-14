@@ -166,11 +166,58 @@ var numCharCountBits_TestData = []struct {
 
 func Test_numCharCountBits(test *testing.T) {
 	for _, data := range numCharCountBits_TestData {
-		actual := data.mode.numCharCountBits(data.version)
+		actual, _ := data.mode.numCharCountBits(data.version)
 		if actual != data.expected {
 			test.Errorf(
 				"mode.Test_numCharCountBits:\n\tactual Test_numCharCountBits -> %d\n is not equal to\n\texpected Test_numCharCountBits -> %d",
 				actual, data.expected,
+			)
+		}
+	}
+}
+
+var numCharCountBitsErr_TestData = []struct {
+	mode modeType
+	version int
+	expected error
+}{
+	{
+		version: 0,
+		mode: modeType{
+			numBitsCharCount: [3]int{10, 12, 14},
+		},
+		expected: ErrModeTypeVerNumOutOfRange,
+	},
+	{
+		version: -1,
+		mode: modeType{
+			numBitsCharCount: [3]int{10, 12, 14},
+		},
+		expected: ErrModeTypeVerNumOutOfRange,
+	},
+	{
+		version: 41,
+		mode: modeType{
+			numBitsCharCount: [3]int{10, 12, 14},
+		},
+		expected: ErrModeTypeVerNumOutOfRange,
+	},
+	{
+		version: 42,
+		mode: modeType{
+			numBitsCharCount: [3]int{10, 12, 14},
+		},
+		expected: ErrModeTypeVerNumOutOfRange,
+	},
+}
+
+func Test_numCharCountBitsErr(test *testing.T) {
+	for _, data := range numCharCountBitsErr_TestData {
+		_, actual := data.mode.numCharCountBits(data.version)
+		if actual != data.expected {
+			test.Errorf(
+				"mode.Test_numCharCountBits:\n\tfunc does not return an error for version %d",
+				data.version,
 			)
 		}
 	}

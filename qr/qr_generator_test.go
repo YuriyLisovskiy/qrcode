@@ -3,8 +3,3 @@
 //  see the accompanying file LICENSE or https://opensource.org/licenses/Apache-2.0
 
 package qr
-
-// Returns XOR result between two boolean values.
-func xor(x, y bool) bool {
-	return (x && !y) || (!x && y)
-}
