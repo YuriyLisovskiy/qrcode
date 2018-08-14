@@ -116,14 +116,14 @@ func (gen *Generator) DrawImage(path string, margin, pictureSize uint) {
 }
 
 // Returns svg string of generated QR Code.
-func (gen *Generator) ToSvg(border int) string {
+func (gen *Generator) ToSvg(border int) (ret string, err error) {
 	if border < 0 {
-		panic(generatorErr("ToSvg", "negative border was given"))
+		return "", generatorErr("ToSvg", "negative border was given")
 	}
 	if border > math.MaxInt64 / 2 || border * 2 > math.MaxInt64 - gen.size {
-		panic(generatorErr("ToSvg", "border too large"))
+		return "", generatorErr("ToSvg", "border too large")
 	}
-	ret := "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+	ret = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
 	"<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n" +
 	"<svg xmlns=\"http://www.w3.org/2000/svg\" version=\"1.1\" viewBox=\"0 0 " +
 	fmt.Sprintf("%d %d\" stroke=\"none\">\n", gen.size + border * 2, gen.size + border * 2) +
@@ -142,8 +142,8 @@ func (gen *Generator) ToSvg(border int) string {
 			}
 		}
 	}
-	ret += "\" fill=\"#000000\"/>\n</svg>\n"
-	return ret
+	ret += "\" fill=\"#000000\"/>\n</svg>"
+	return
 }
 
 // Returns boolean matrix of modules of generated QR Code.
