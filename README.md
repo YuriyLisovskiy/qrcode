@@ -1,8 +1,8 @@
 # QR Code Generator
-[![License](https://img.shields.io/badge/BSD-3--Clause-orange.svg)](LICENSE)
-[![Language](https://img.shields.io/badge/Go-1.3-blue.svg)](https://golang.org/)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](LICENSE)
+[![Minimum Go Version](https://img.shields.io/badge/Go-v1.3-blue.svg)](https://golang.org/)
+[![Go Documentation](https://img.shields.io/badge/go-docs-blue.svg)](https://godoc.org/github.com/YuriyLisovskiy/qrcode/qr)
 [![Build Status](https://travis-ci.org/YuriyLisovskiy/qrcode.svg?branch=master)](https://travis-ci.org/YuriyLisovskiy/qrcode)
-[![GoDoc](https://img.shields.io/badge/go-docs-blue.svg)](https://godoc.org/github.com/YuriyLisovskiy/qrcode/qr)
 ### Installation
 ```
 $ go get github.com/YuriyLisovskiy/qrcode/qr
@@ -13,9 +13,14 @@ Import package with
 import "github.com/YuriyLisovskiy/qrcode/qr"
 ```
 ```go
+// Create an instance of Generator.
 qrGen := qr.Generator{}
+
+// Encode the text.
 qrGen = qrGen.EncodeText("https://github.com/YuriyLisovskiy")
-qrGen.DrawImage("qr.png", 4, 500)
+
+// Create an image of generated qr code.
+qrGen.DrawImage("path/to/qr.png", 4, 500)
 ```
 #### Result image:
 <p align="center">
