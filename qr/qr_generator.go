@@ -316,7 +316,7 @@ func (gen *Generator) module(x, y int) bool {
 	return gen.modules[y][x]
 }
 
-// Returns true iff the i'th bit of x is set to 1.
+// Returns true if the i'th bit of x is set to 1.
 func (Generator) getBit(x int, i uint) bool {
 	return ((x >> i) & 1) != 0
 }

@@ -4,7 +4,9 @@
 
 package qr
 
-import "testing"
+import (
+	"testing"
+	)
 
 /*
 var ToSvg_TestData = []struct {
@@ -279,6 +281,471 @@ func Test_getSize(test *testing.T) {
 				"qr_generator.Test_getSize:\n\tactual size -> %d\n is not equal to\n\texpected size -> %d",
 				actual, data.expected,
 			)
+		}
+	}
+}
+
+var getErrorCorrectionLevel_TestData = []struct {
+	input    Generator
+	expected eccType
+}{
+	{
+		input: Generator{
+			errorCorrectionLevel: eccLOW,
+		},
+		expected: eccLOW,
+	},
+	{
+		input: Generator{
+			errorCorrectionLevel: eccMEDIUM,
+		},
+		expected: eccMEDIUM,
+	},
+	{
+		input: Generator{
+			errorCorrectionLevel: eccQUARTILE,
+		},
+		expected: eccQUARTILE,
+	},
+	{
+		input: Generator{
+			errorCorrectionLevel: eccHIGH,
+		},
+		expected: eccHIGH,
+	},
+}
+
+func Test_getErrorCorrectionLevel(test *testing.T) {
+	for _, data := range getErrorCorrectionLevel_TestData {
+		actual := data.input.getErrorCorrectionLevel()
+		if actual != data.expected {
+			test.Errorf(
+				"qr_generator.Test_getErrorCorrectionLevel:\n\tactual errorCorrectionLevel -> %d\n is not equal to\n\texpected errorCorrectionLevel -> %d",
+				actual, data.expected,
+			)
+		}
+	}
+}
+
+var getMask_TestData = []struct {
+	input    Generator
+	expected int
+}{
+	{
+		input: Generator{
+			mask: 1,
+		},
+		expected: 1,
+	},
+	{
+		input: Generator{
+			mask: 2,
+		},
+		expected: 2,
+	},
+	{
+		input: Generator{
+			mask: 3,
+		},
+		expected: 3,
+	},
+	{
+		input: Generator{
+			mask: 4,
+		},
+		expected: 4,
+	},
+	{
+		input: Generator{
+			mask: 5,
+		},
+		expected: 5,
+	},
+	{
+		input: Generator{
+			mask: 6,
+		},
+		expected: 6,
+	},
+	{
+		input: Generator{
+			mask: 7,
+		},
+		expected: 7,
+	},
+	{
+		input: Generator{
+			mask: 8,
+		},
+		expected: 8,
+	},
+	{
+		input: Generator{
+			mask: 9,
+		},
+		expected: 9,
+	},
+}
+
+func Test_getMask(test *testing.T) {
+	for _, data := range getMask_TestData {
+		actual := data.input.getMask()
+		if actual != data.expected {
+			test.Errorf(
+				"qr_generator.Test_getMask:\n\tactual mask -> %d\n is not equal to\n\texpected mask -> %d",
+				actual, data.expected,
+			)
+		}
+	}
+}
+
+var TestDataGen = Generator{
+	size: 10,
+	modules: [][]bool{
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+	},
+	isFunction: [][]bool{
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+		{false, false, true, false, true, true, false, false, false, true,},
+	},
+}
+var getModule_TestData = []struct {
+	x        int
+	y        int
+	expected bool
+}{
+	{
+		x: 1, y: 1,
+		expected: false,
+	},
+	{
+		x: 2, y: 2,
+		expected: true,
+	},
+	{
+		x: 3, y: 3,
+		expected: false,
+	},
+	{
+		x: 4, y: 4,
+		expected: true,
+	},
+	{
+		x: 5, y: 5,
+		expected: true,
+	},
+	{
+		x: 6, y: 6,
+		expected: false,
+	},
+	{
+		x: 7, y: 7,
+		expected: false,
+	},
+	{
+		x: 8, y: 8,
+		expected: false,
+	},
+}
+
+func Test_getModule(test *testing.T) {
+	for _, data := range getModule_TestData {
+		actual := TestDataGen.getModule(data.x, data.y)
+		if actual != data.expected {
+			test.Errorf(
+				"qr_generator.Test_getModule:\n\tactual module -> %t\n is not equal to\n\texpected module -> %t",
+				actual, data.expected,
+			)
+		}
+	}
+}
+
+var module_TestData = []struct {
+	x        int
+	y        int
+	expected bool
+}{
+	{
+		x: 1, y: 1,
+		expected: false,
+	},
+	{
+		x: 2, y: 2,
+		expected: true,
+	},
+	{
+		x: 3, y: 3,
+		expected: false,
+	},
+	{
+		x: 4, y: 4,
+		expected: true,
+	},
+	{
+		x: 5, y: 5,
+		expected: true,
+	},
+	{
+		x: 6, y: 6,
+		expected: false,
+	},
+	{
+		x: 7, y: 7,
+		expected: false,
+	},
+	{
+		x: 8, y: 8,
+		expected: false,
+	},
+}
+
+func Test_module(test *testing.T) {
+	for _, data := range module_TestData {
+		actual := TestDataGen.module(data.x, data.y)
+		if actual != data.expected {
+			test.Errorf(
+				"qr_generator.Test_module:\n\tactual module -> %t\n is not equal to\n\texpected module -> %t",
+				actual, data.expected,
+			)
+		}
+	}
+}
+
+var getBit_TestData = []struct {
+	x        int
+	i        uint
+	expected bool
+}{
+	{
+		x: 1, i: 1,
+		expected: false,
+	},
+	{
+		x: 2, i: 2,
+		expected: false,
+	},
+	{
+		x: 3, i: 3,
+		expected: false,
+	},
+	{
+		x: 4, i: 4,
+		expected: false,
+	},
+	{
+		x: 5, i: 5,
+		expected: false,
+	},
+	{
+		x: 6, i: 6,
+		expected: false,
+	},
+	{
+		x: 7, i: 7,
+		expected: false,
+	},
+	{
+		x: 8, i: 8,
+		expected: false,
+	},
+}
+
+func Test_getBit(test *testing.T) {
+	for i, data := range getBit_TestData {
+		actual := TestDataGen.getBit(data.x, data.i)
+		if actual != data.expected {
+			test.Errorf(
+				"qr_generator.Test_getBit[%d]:\n\tactual bit -> %t\n is not equal to\n\texpected bit -> %t",
+				i, actual, data.expected,
+			)
+		}
+	}
+}
+
+var setFunctionModule_TestData = []struct {
+	x                  int
+	y                  int
+	isBlack            bool
+	expectedModule     bool
+	expectedIsFunction bool
+}{
+	{
+		x:                  1,
+		y:                  2,
+		isBlack:            true,
+		expectedModule:     true,
+		expectedIsFunction: true,
+	},
+	{
+		x:                  3,
+		y:                  1,
+		isBlack:            false,
+		expectedModule:     false,
+		expectedIsFunction: true,
+	},
+	{
+		x:                  1,
+		y:                  1,
+		isBlack:            true,
+		expectedModule:     true,
+		expectedIsFunction: true,
+	},
+	{
+		x:                  2,
+		y:                  2,
+		isBlack:            false,
+		expectedModule:     false,
+		expectedIsFunction: true,
+	},
+}
+
+func Test_setFunctionModule(test *testing.T) {
+	for i, data := range setFunctionModule_TestData {
+		TestDataGen.setFunctionModule(data.x, data.y, data.isBlack)
+		actualModule := TestDataGen.module(data.x, data.y)
+		if actualModule != data.expectedModule {
+			test.Errorf(
+				"qr_generator.Test_setFunctionModule[%d]:\n\tactual module -> %t\n is not equal to\n\texpected module -> %t",
+				i, actualModule, data.expectedModule,
+			)
+		}
+		actualIsFunction := TestDataGen.isFunction[data.y][data.x]
+		if actualIsFunction != data.expectedIsFunction {
+			test.Errorf(
+				"qr_generator.Test_setFunctionModule[%d]:\n\tactual isFunction -> %t\n is not equal to\n\texpected isFunction -> %t",
+				i, actualIsFunction, data.expectedIsFunction,
+			)
+		}
+	}
+}
+
+var drawAlignmentPattern_TestData = []struct {
+	x                   int
+	y                   int
+	expectedModules     [][]bool
+	expectedIsFunctions [][]bool
+}{
+	{
+		x: 3,
+		y: 4,
+		expectedModules: [][]bool{
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, true, true, false, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, false, false, false, true, false, false, false, true},
+			{false, true, false, true, false, true, false, false, false, true},
+			{false, true, false, false, false, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+		},
+		expectedIsFunctions: [][]bool{
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+		},
+	},
+	{
+		x: 3,
+		y: 5,
+		expectedModules: [][]bool{
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, true, true, false, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, false, false, false, true, false, false, false, true},
+			{false, true, false, true, false, true, false, false, false, true},
+			{false, true, false, false, false, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+		},
+		expectedIsFunctions: [][]bool{
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+		},
+	},
+	{
+		x: 5,
+		y: 3,
+		expectedModules: [][]bool{
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, true, true, true, true, true, true, true, false, true},
+			{false, true, true, true, false, false, false, true, false, true},
+			{false, true, true, true, false, true, false, true, false, true},
+			{false, true, false, true, false, false, false, true, false, true},
+			{false, true, false, true, true, true, true, true, false, true},
+			{false, true, false, false, false, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+		},
+		expectedIsFunctions: [][]bool{
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, true, true, true, true, true, true, true, false, true},
+			{false, true, true, true, true, true, true, true, false, true},
+			{false, true, true, true, true, true, true, true, false, true},
+			{false, true, true, true, true, true, true, true, false, true},
+			{false, true, true, true, true, true, true, true, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, true, true, true, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+			{false, false, true, false, true, true, false, false, false, true},
+		},
+	},
+}
+
+func Test_drawAlignmentPattern(test *testing.T) {
+	for i, data := range drawAlignmentPattern_TestData {
+		TestDataGen.drawAlignmentPattern(data.x, data.y)
+		for x := range TestDataGen.modules {
+			for y := range TestDataGen.modules {
+				if TestDataGen.modules[x][y] != data.expectedModules[x][y] {
+					test.Errorf(
+						"qr_generator.Test_drawAlignmentPattern[%d]:\n\tactual module -> %t\n is not equal to\n\texpected module -> %t",
+						i, TestDataGen.modules[x][y], data.expectedModules[x][y],
+					)
+				}
+				if TestDataGen.isFunction[x][y] != data.expectedIsFunctions[x][y] {
+					test.Errorf(
+						"qr_generator.Test_drawAlignmentPattern[%d]:\n\tactual isFunction -> %t\n is not equal to\n\texpected isFunction -> %t",
+						i, TestDataGen.isFunction[x][y], data.expectedIsFunctions[x][y],
+					)
+				}
+			}
 		}
 	}
 }
