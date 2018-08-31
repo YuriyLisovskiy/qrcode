@@ -5,8 +5,8 @@
 package qr
 
 import (
-	"fmt"
 	"errors"
+	"fmt"
 	"testing"
 )
 

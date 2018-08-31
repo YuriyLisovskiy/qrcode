@@ -5,13 +5,13 @@
 package qr
 
 import (
-	"os"
 	"fmt"
-	"math"
 	"image"
-	"image/png"
-	"image/draw"
 	"image/color"
+	"image/draw"
+	"image/png"
+	"math"
+	"os"
 
 	"github.com/nfnt/resize"
 )

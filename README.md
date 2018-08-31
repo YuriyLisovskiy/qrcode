@@ -3,6 +3,7 @@
 [![Minimum Go Version](https://img.shields.io/badge/Go-v1.3-blue.svg)](https://golang.org/)
 [![Go Documentation](https://img.shields.io/badge/godoc-reference-blue.svg)](https://godoc.org/github.com/YuriyLisovskiy/qrcode/qr)
 [![Build Status](https://travis-ci.org/YuriyLisovskiy/qrcode.svg?branch=master)](https://travis-ci.org/YuriyLisovskiy/qrcode)
+[![Coverage Status](https://coveralls.io/repos/github/YuriyLisovskiy/qrcode/badge.svg)](https://coveralls.io/github/YuriyLisovskiy/qrcode)
 ### Installation
 ```
 $ go get github.com/YuriyLisovskiy/qrcode/qr

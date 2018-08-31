@@ -5,10 +5,10 @@
 package qr
 
 import (
+	"math"
 	"testing"
-	)
+)
 
-/*
 var ToSvg_TestData = []struct {
 	input    string
 	border   int
@@ -199,7 +199,6 @@ func Test_ToSvgErr(test *testing.T) {
 		}
 	}
 }
-*/
 
 var getVersion_TestData = []struct {
 	input    Generator
