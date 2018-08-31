@@ -6,7 +6,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/YuriyLisovskiy/qrcode/badge.svg)](https://coveralls.io/github/YuriyLisovskiy/qrcode)
 ### Installation
 ```
-$ go get github.com/YuriyLisovskiy/qrcode/qr
+$ go get -u github.com/YuriyLisovskiy/qrcode/qr
 ```
 ### Usage
 Import package with
