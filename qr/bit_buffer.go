@@ -2,7 +2,7 @@
 //  Distributed under the Apache License Version 2.0,
 //  see the accompanying file LICENSE or https://opensource.org/licenses/Apache-2.0
 
-package qr
+package qr // import "github.com/YuriyLisovskiy/qrcode/qr"
 
 // An appendable sequence of bits (0's and 1's).
 type bitBuffer []bool
